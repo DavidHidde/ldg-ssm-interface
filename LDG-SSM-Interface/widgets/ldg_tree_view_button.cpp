@@ -11,6 +11,17 @@ LDGTreeViewButton::LDGTreeViewButton(QWidget *parent)
 }
 
 /**
+ * @brief LDGTreeViewButton::heightForWidth Keep a square aspect ratio.
+ * @param width
+ * @return
+ */
+int LDGTreeViewButton::heightForWidth(int w) const
+{
+    qDebug() << "Called height for width";
+    return w;
+}
+
+/**
  * @brief LDGTreeViewButton::~LDGTreeViewButton
  */
 LDGTreeViewButton::~LDGTreeViewButton()
@@ -74,7 +85,10 @@ void LDGTreeViewButton::merge()
 void LDGTreeViewButton::setStyleOptions()
 {
     setFrameStyle(FRAME_STYLE);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    auto widget_size = size();
+    auto max_dim = widget_size.height() > widget_size.width() ? widget_size.width() : widget_size.height();
+    resize(max_dim, max_dim);
 }
 
 /**
@@ -82,7 +96,7 @@ void LDGTreeViewButton::setStyleOptions()
  */
 void LDGTreeViewButton::setChildren()
 {
-    QGridLayout *layout = new QGridLayout();
+    SquareGridLayout *layout = new SquareGridLayout();
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(SPACING);
     setLayout(layout);

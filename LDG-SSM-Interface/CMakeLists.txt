@@ -14,9 +14,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 set(PROJECT_SOURCES
         main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
+        ldg_ssm_interface.cpp
+        ldg_ssm_interface.h
+        ldg_ssm_interface.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -24,6 +24,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         widgets/ldg_tree_view_button.h widgets/ldg_tree_view_button.cpp
+        layout/square_grid_layout.h layout/square_grid_layout.cpp
+        widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
