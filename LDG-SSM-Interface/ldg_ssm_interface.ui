@@ -20,7 +20,15 @@
    <property name="styleSheet">
     <string notr="true">background: white</string>
    </property>
-   <layout class="QGridLayout" name="gridLayout"/>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Controls</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

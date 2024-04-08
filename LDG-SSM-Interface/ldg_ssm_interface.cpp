@@ -1,5 +1,6 @@
 #include "ldg_ssm_interface.h"
 #include "./ui_ldg_ssm_interface.h"
+#include "util/build_tree.h"
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
@@ -13,7 +14,7 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     setWindowTitle("LDG-SSM");
 
     scroll_area = new PannableScrollArea();
-    root_ldg_button = new LDGTreeViewButton();
+    root_ldg_button = buildTree(80, 128, this);
 
     setCentralWidget(scroll_area);
     scroll_area->setWidget(root_ldg_button);
@@ -29,13 +30,24 @@ LDGSSMInterface::~LDGSSMInterface()
 }
 
 /**
+ * @brief LDGSSMInterface::keyPressEvent
+ * @param event
+ */
+void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
+{
+    auto key_pressed = event->key();
+    if (key_pressed >= Qt::Key_0 && key_pressed <= Qt::Key_9) {
+        emit selectionChanged(key_pressed - Qt::Key_0);
+    }
+}
+
+/**
  * @brief LDGSSMInterface::LDGSSMInterface Initialize the menus of the window.
  */
 void LDGSSMInterface::initializeMenus()
 {
     // Initialize the file menu shortcuts.
     file_menu = ui->menuFile;
-
 
     // Initialize the view menu shortcuts.
     view_menu = ui->menuView;

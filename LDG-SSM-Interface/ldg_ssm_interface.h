@@ -32,5 +32,11 @@ class LDGSSMInterface: public QMainWindow
 public:
     LDGSSMInterface(QWidget *parent = nullptr);    
     ~LDGSSMInterface();
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+
+signals:
+    void selectionChanged(size_t height);
 };
 #endif // LDGSSMINTERFACE_H
