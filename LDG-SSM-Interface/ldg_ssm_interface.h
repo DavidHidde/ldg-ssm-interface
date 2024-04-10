@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-#include "widgets/ldg_tree_view_button.h"
+#include "widgets/render_view.h"
 #include "widgets/pannable_scroll_area.h"
 
 QT_BEGIN_NAMESPACE
@@ -22,7 +22,7 @@ class LDGSSMInterface: public QMainWindow
     Ui::LDGSSMInterface *ui;
 
     PannableScrollArea *scroll_area;
-    LDGTreeViewButton *root_ldg_button;
+    RenderView *render_view;
 
     QMenu *file_menu;
     QMenu *view_menu;

@@ -2,18 +2,23 @@
 
 /**
  * @brief PannableScrollArea::PannableScrollArea
+ * @param parent
  */
-void PannableScrollArea::resizeWidget()
-{
-    auto max_dim = height() > width() ? scale * width() : scale * height();
-    if (widget() != nullptr)
-        widget()->resize(max_dim, max_dim);
-}
-
-PannableScrollArea::PannableScrollArea()
+PannableScrollArea::PannableScrollArea(QWidget *parent):
+    QScrollArea(parent)
 {
     setAlignment(Qt::AlignCenter);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setFrameShape(QFrame::NoFrame);
+}
+
+/**
+ * @brief PannableScrollArea::PannableScrollArea
+ */
+void PannableScrollArea::resizeWidget()
+{
+    if (widget() != nullptr)
+        widget()->resize(width() * scale, height() * scale);
 }
 
 /**
@@ -39,10 +44,10 @@ void PannableScrollArea::zoomIn()
  */
 void PannableScrollArea::zoomOut()
 {
-    if (scale > SCALE_STEP_SIZE)
+    if (scale > SCALE_STEP_SIZE) {
         scale -= SCALE_STEP_SIZE;
-
-    resizeWidget();
+        resizeWidget();
+    }
 }
 
 /**

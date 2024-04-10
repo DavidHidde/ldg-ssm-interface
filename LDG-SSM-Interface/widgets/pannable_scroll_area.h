@@ -1,10 +1,11 @@
 #ifndef PANNABLESCROLLAREA_H
 #define PANNABLESCROLLAREA_H
 
+#include <QOpenGLWidget>
 #include <QScrollArea>
 
 /**
- * A scroll area, cinlduing controls for scaling and panning.
+ * A scroll area that is able to zoom and pan on the nested content.
  *
  * @brief The PannableScrollArea class
  */
@@ -14,10 +15,10 @@ class PannableScrollArea : public QScrollArea
 
     double scale = 1.0;
 
-    void resizeWidget();
-
 public:
-    PannableScrollArea();
+    PannableScrollArea(QWidget *parent = nullptr);
+
+    void resizeWidget();
 
 public slots:
     void fitWindow();

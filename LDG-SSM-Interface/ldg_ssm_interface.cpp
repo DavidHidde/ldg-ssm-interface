@@ -1,6 +1,7 @@
 #include "ldg_ssm_interface.h"
 #include "./ui_ldg_ssm_interface.h"
-#include "util/build_tree.h"
+#include "QtGui/qevent.h"
+#include "util/initialize_tree.h"
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
@@ -13,11 +14,11 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("LDG-SSM");
 
-    scroll_area = new PannableScrollArea();
-    root_ldg_button = buildTree(80, 128, this);
+    scroll_area = ui->scrollArea;
+    auto draw_properties = initializeTreeProperties(32, 32);
+    render_view = new RenderView(scroll_area, draw_properties);
 
-    setCentralWidget(scroll_area);
-    scroll_area->setWidget(root_ldg_button);
+    scroll_area->setWidget(render_view);
     initializeMenus();
 }
 
@@ -27,6 +28,8 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
 LDGSSMInterface::~LDGSSMInterface()
 {
     delete ui;
+    delete render_view;
+    delete scroll_area;
 }
 
 /**

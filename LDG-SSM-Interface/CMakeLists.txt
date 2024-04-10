@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS OpenGL OpenGLWidgets Widgets)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -23,10 +24,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(LDG-SSM-Interface
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        widgets/ldg_tree_view_button.h widgets/ldg_tree_view_button.cpp
-        layout/square_grid_layout.h layout/square_grid_layout.cpp
         widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
-        util/build_tree.h util/build_tree.cpp
+        util/initialize_tree.h util/initialize_tree.cpp
+        widgets/render_view.h widgets/render_view.cpp
+        util/tree_draw_properties.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -46,7 +47,12 @@ else()
     endif()
 endif()
 
-target_link_libraries(LDG-SSM-Interface PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_include_directories(LDG-SSM-Interface PRIVATE .)
+target_link_libraries(LDG-SSM-Interface PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt::OpenGL
+    Qt::OpenGLWidgets
+)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
