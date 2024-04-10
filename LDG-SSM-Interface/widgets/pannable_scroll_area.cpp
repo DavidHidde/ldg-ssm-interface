@@ -13,12 +13,14 @@ PannableScrollArea::PannableScrollArea(QWidget *parent):
 }
 
 /**
- * @brief PannableScrollArea::PannableScrollArea
+ * @brief PannableScrollArea::PannableScrollArea Scale and square the inner widget.
  */
 void PannableScrollArea::resizeWidget()
 {
-    if (widget() != nullptr)
-        widget()->resize(width() * scale, height() * scale);
+    if (widget() != nullptr) {
+        int scaled_max_dim = std::round(scale * static_cast<double>(std::min(width(), height())));
+        widget()->resize(scaled_max_dim, scaled_max_dim);
+    }
 }
 
 /**

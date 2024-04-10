@@ -2,7 +2,6 @@
 #define TREEDRAWPROPERTIES_H
 
 #include <cstddef>
-#include <QPoint>
 #include <QList>
 
 /**
@@ -11,11 +10,11 @@
 struct TreeDrawProperties
 {
     // Draw properties
-    size_t node_spacing;                            // Spacing between nodes in the grid.
-    QPoint grid_origin;                             // Origin point of the grid.
+    size_t node_spacing;                            // Spacing between nodes in the grid (screen space).
+    double gl_space_scale_factor;                   // Scaling fcator for scaling from sceen space to OpenGL world space.
     QList<std::pair<size_t, size_t>> draw_array;    // The elements that should be drawn, consisting of [height, index] pairs.
-    QList<size_t> click_assignment;                 // Array of the base grid size pointing to indices within the draw array resembling the clicked elements.
-    QList<size_t> height_node_lens;                 // Lengths of the nodes at each height.
+    QList<int> click_assignment;                    // Square row-major array (nearest power of 2) to indices within the draw array resembling the clicked elements. -1 indicates a miss.
+    QList<size_t> height_node_lens;                 // Lengths of the nodes at each height (screen space).
 
     // Tree dimensions
     const size_t tree_max_height;                         // Max height of the quad tree.

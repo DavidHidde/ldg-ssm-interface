@@ -18,19 +18,25 @@ TreeDrawProperties *initializeTreeProperties(size_t num_rows, size_t num_cols)
         ++height;
     }
 
-    // Build draw properties. The origin point and sidelens are later recalculated based on window size.
-    QPoint origin{ 0, 0 };
-    QList<std::pair<size_t, size_t>> draw_array{ { height, 0 } }; // Contains root by default.
-    QList<size_t> click_assignment(num_rows * num_cols, 0); // Only root visible so all clicks click the root.
-    QList<size_t> height_lens(height + 1, 0);
+    // Build draw properties. The sidelens are later recalculated based on window size.
+    // QList<std::pair<size_t, size_t>> draw_array{ { height - 1, 0 } }; // Contains root by default.
+    QList<int> click_assignment(num_rows * num_cols, 0); // Only root visible so all clicks click the root.
+    QList<size_t> height_lens(height, 0);
+    QList<std::pair<size_t, size_t>> draw_array{
+        { height - 2, 0 },
+        { height - 2, 1 },
+        { height - 2, 2 },
+        { height - 2, 3 },
+        { height - 3, 5 }
+    }; // Contains root by default.
 
     TreeDrawProperties *properties = new TreeDrawProperties{
-        5,  // Default spacing
-        origin,
+        10, // Default spacing
+        1., // Scaling factor
         draw_array,
         click_assignment,
         height_lens,
-        height,
+        --height,
         height_dims
     };
 
