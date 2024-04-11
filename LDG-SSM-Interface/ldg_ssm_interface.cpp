@@ -15,8 +15,11 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     setWindowTitle("LDG-SSM");
 
     scroll_area = ui->scrollArea;
-    auto draw_properties = initializeTreeProperties(32, 32);
-    render_view = new RenderView(scroll_area, draw_properties);
+    auto draw_properties = initializeTreeProperties(80, 128);
+    GridController *grid_controller = new GridController(draw_properties);
+    render_view = new RenderView(scroll_area, draw_properties, grid_controller);
+
+    QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
 
     scroll_area->setWidget(render_view);
     initializeMenus();
