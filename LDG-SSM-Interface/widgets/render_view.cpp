@@ -1,6 +1,7 @@
 #include "render_view.h"
 
 #include <QLoggingCategory>
+#include <QMatrix4x4>
 #include <QPainter>
 
 /**
@@ -61,6 +62,10 @@ void RenderView::initializeGL()
     glDepthFunc(GL_LEQUAL);
 
     glClearColor(1., 1., 1., 1.0);
+
+    // Initialize matrices;
+    draw_properties->projection.ortho(-1, 1, -1, 1, 1, -1);
+
 }
 
 /**
@@ -88,13 +93,23 @@ void RenderView::paintGL()
 void RenderView::resizeGL(int width, int height)
 {
     glViewport(0, 0, width, height);
+    draw_properties->viewport = QRect{ 0, 0, width, height };
 
+    // Update side lengths.
     double side_len = width - 2; // Subtract 2 pixels to make sure we stay within the borders
-    // Update draw properties
     for (int curr_height = draw_properties->tree_max_height; curr_height >= 0; --curr_height) {
         draw_properties->height_node_lens[curr_height] = side_len;
         side_len = (side_len - draw_properties->node_spacing) / 2.;
     }
+}
+
+/**
+ * @brief RenderView::mousePressEvent
+ * @param event
+ */
+void RenderView::mousePressEvent(QMouseEvent *event)
+{
+    grid_controller->handleMouseClick(event);
 }
 
 /**

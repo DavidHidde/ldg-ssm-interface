@@ -1,7 +1,7 @@
 #include "ldg_ssm_interface.h"
 #include "./ui_ldg_ssm_interface.h"
 #include "QtGui/qevent.h"
-#include "util/initialize_tree.h"
+#include "util/tree_functions.h"
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
@@ -15,7 +15,7 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     setWindowTitle("LDG-SSM");
 
     scroll_area = ui->scrollArea;
-    auto draw_properties = initializeTreeProperties(80, 128);
+    auto draw_properties = initializeTreeProperties(256, 256);
     GridController *grid_controller = new GridController(draw_properties);
     render_view = new RenderView(scroll_area, draw_properties, grid_controller);
 

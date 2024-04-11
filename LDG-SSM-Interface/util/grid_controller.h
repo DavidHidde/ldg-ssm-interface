@@ -20,12 +20,16 @@ class GridController: public QObject
     void splitNode(size_t height, size_t index);
     void mergeNode(size_t height, size_t index);
 
+    std::pair<int, int> resolveGridPosition(QPointF &position);
+
 public:
     GridController(TreeDrawProperties *draw_properties);
 
-    QPoint fromWorldSpaceToScreenSpace(QPoint &point);
-
 public slots:
+    /**
+     * @brief GridController::handleMouseClick Finds the clicked node and splits or merges it if appropriate.
+     * @param event
+     */
     void handleMouseClick(QMouseEvent *event);
     void selectHeight(size_t height);
 

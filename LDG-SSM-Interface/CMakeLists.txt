@@ -25,7 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
-        util/initialize_tree.h util/initialize_tree.cpp
+        util/tree_functions.h util/tree_functions.cpp
         widgets/render_view.h widgets/render_view.cpp
         util/tree_draw_properties.h
         drawing/overlay_painter.h drawing/overlay_painter.cpp
