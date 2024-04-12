@@ -31,6 +31,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         drawing/overlay_painter.h drawing/overlay_painter.cpp
         assets.qrc
         util/grid_controller.h util/grid_controller.cpp
+        drawing/renderer.h drawing/renderer.cpp
+        drawing/image_renderer.h drawing/image_renderer.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

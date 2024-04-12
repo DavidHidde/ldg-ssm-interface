@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file>shaders/phong.frag</file>
-        <file>shaders/phong.vert</file>
-        <file>shaders/shading.glsl</file>
+        <file>shaders/image.vert</file>
+        <file>shaders/image.frag</file>
+        <file>doot.jpg</file>
     </qresource>
 </RCC>
