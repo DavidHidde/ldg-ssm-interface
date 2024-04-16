@@ -3,5 +3,6 @@
         <file>shaders/image.vert</file>
         <file>shaders/image.frag</file>
         <file>doot.jpg</file>
+        <file>frog.jpg</file>
     </qresource>
 </RCC>

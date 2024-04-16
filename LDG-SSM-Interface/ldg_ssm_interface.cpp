@@ -16,9 +16,16 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     setWindowTitle("LDG-SSM");
     scroll_area = ui->scrollArea;
 
-    auto draw_properties = initializeTreeProperties(256, 256);
+    auto draw_properties = initializeTreeProperties(80, 128);
     GridController *grid_controller = new GridController(draw_properties);
-    ImageRenderer *renderer = new ImageRenderer(draw_properties);
+
+    QImage doot{":/doot.jpg"};
+    QImage frog{":/frog.jpg"};
+    int max_dim = std::max(doot.width(), doot.height());
+    QMap<std::pair<size_t, size_t>, QImage> *textures = new QMap<std::pair<size_t, size_t>, QImage>();
+    (*textures)[{0, 0}] = doot.scaled(max_dim, max_dim, Qt::KeepAspectRatio);
+    (*textures)[{0, 1}] = frog.scaled(max_dim, max_dim, Qt::KeepAspectRatio);
+    ImageRenderer *renderer = new ImageRenderer(draw_properties, textures);
     render_view = new RenderView(scroll_area, draw_properties, grid_controller, renderer);
 
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);

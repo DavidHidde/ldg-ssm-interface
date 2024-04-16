@@ -33,6 +33,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         util/grid_controller.h util/grid_controller.cpp
         drawing/renderer.h drawing/renderer.cpp
         drawing/image_renderer.h drawing/image_renderer.cpp
+        util/image_atlas_container.h util/image_atlas_container.cpp
+
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
