@@ -16,7 +16,7 @@ struct TreeDrawProperties
 
     // Data
     QSet<std::pair<size_t, size_t>> draw_array;             // The elements that should be drawn, consisting of [height, index] pairs.
-    QSet<std::pair<size_t, size_t>> valid_nodes;            // The tree nodes that are showable.
+    QSet<std::pair<size_t, size_t>> invalid_nodes;          // Void tile nodes.
 
     // Screen space - Pixel sizes
     double node_spacing;                                    // Spacing between nodes in the grid.

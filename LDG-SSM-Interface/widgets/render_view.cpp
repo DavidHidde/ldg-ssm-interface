@@ -34,8 +34,8 @@ RenderView::~RenderView()
 {
     debug_logger.stopLogging();
 
-    delete grid_controller;
     delete renderer;
+    delete grid_controller;
     delete draw_properties;
 }
 

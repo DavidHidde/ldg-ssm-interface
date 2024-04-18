@@ -89,6 +89,7 @@ QPair<QMap<QPair<size_t, size_t>, QPair<QImage, double>> *, TreeDrawProperties *
 
     // Combine everything into a single map
     QMap<QPair<size_t, size_t>, QPair<QImage, double>> *map = new QMap<QPair<size_t, size_t>, QPair<QImage, double>>;
+    QSet<QPair<size_t, size_t>> invalid_nodes;
     for (size_t height = 0; height < max_height; ++height) {
         auto [start, end] = start_ends[height];
         for (size_t idx = 0; start + idx < end;  ++idx) {
@@ -104,6 +105,8 @@ QPair<QMap<QPair<size_t, size_t>, QPair<QImage, double>> *, TreeDrawProperties *
                     ),
                     disparity_buffer[assigned_idx]
                 };
+            } else {
+                invalid_nodes.insert({ height, idx });
             }
         }
     }
@@ -111,7 +114,7 @@ QPair<QMap<QPair<size_t, size_t>, QPair<QImage, double>> *, TreeDrawProperties *
     // Set up properties
     TreeDrawProperties *properties = new TreeDrawProperties{ max_height - 1, height_dims };
     properties->draw_array.insert({ max_height - 1, 0 }); // Contains root by default.
-    properties->valid_nodes = QSet(map->keyBegin(), map->keyEnd());
+    properties->invalid_nodes = invalid_nodes;
     properties->node_spacing = 5.;  // Default spacing of 5.
     properties->height_node_lens = QList<double>(max_height, 0.);
 

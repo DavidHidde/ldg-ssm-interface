@@ -10,6 +10,13 @@ Renderer::Renderer(TreeDrawProperties *draw_properties):
 }
 
 /**
+ * @brief Renderer::~Renderer
+ */
+Renderer::~Renderer()
+{
+}
+
+/**
  * @brief Renderer::intialize
  * @param gl
  */

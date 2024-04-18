@@ -20,7 +20,7 @@ void GridController::splitNode(size_t height, size_t index)
 {
     draw_properties->draw_array.remove({ height, index });
     for (auto &child_index : getChildrenIndices(height, index, draw_properties)) {
-        if (child_index != -1)
+        if (child_index != -1 && !draw_properties->invalid_nodes.contains({ height - 1, child_index }))
             draw_properties->draw_array.insert({ height - 1, child_index });
     }
 }
@@ -40,7 +40,11 @@ void GridController::mergeNode(size_t height, size_t index)
 
     while (!queue.isEmpty()) {
         auto [node_height, node_index] = queue.dequeue();
-        if (node_index != -1 && !draw_properties->draw_array.remove({ node_height, node_index })) {
+        if (
+            node_index != -1 &&
+            !draw_properties->draw_array.remove({ node_height, node_index }) &&
+            !draw_properties->invalid_nodes.contains({ node_height, node_index })
+        ) {
             for (auto &child_index : getChildrenIndices(node_height, node_index, draw_properties))
                 queue.enqueue({ node_height - 1, child_index });
         }
@@ -112,7 +116,8 @@ void GridController::selectHeight(size_t height)
         // Update draw array
         draw_properties->draw_array.clear();
         for (size_t idx = 0; idx < num_rows * num_cols; ++idx) {
-            draw_properties->draw_array.insert({ height, idx });
+            if (!draw_properties->invalid_nodes.contains({ height, idx }))
+                draw_properties->draw_array.insert({ height, idx });
         }
 
         emit gridChanged();

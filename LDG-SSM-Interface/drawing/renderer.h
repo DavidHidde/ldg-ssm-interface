@@ -16,6 +16,7 @@ class Renderer : public QObject
 
 public:
     Renderer(TreeDrawProperties *draw_properties);
+    virtual ~Renderer();
 
     virtual void intialize(QOpenGLFunctions_4_1_Core *gl);
     virtual void updateBuffers();

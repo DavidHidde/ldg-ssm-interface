@@ -23,7 +23,7 @@ class ImageRenderer : public Renderer
 
 public:
     ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data);
-    ~ImageRenderer();
+    ~ImageRenderer() override;
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;
     void initializeBuffers();

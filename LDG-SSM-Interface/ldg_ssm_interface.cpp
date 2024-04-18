@@ -2,34 +2,26 @@
 #include "./ui_ldg_ssm_interface.h"
 #include "QtGui/qevent.h"
 #include "input/data_buffer.h"
-#include "util/tree_functions.h"
 #include "drawing/image_renderer.h"
+#include <QFileDialog>
+#include <QMessageBox>
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
  * @param parent
  */
-LDGSSMInterface::LDGSSMInterface(QWidget *parent)
-    : QMainWindow(parent),
+LDGSSMInterface::LDGSSMInterface(QWidget *parent):
+    render_view(nullptr),
+    QMainWindow(parent),
     ui(new Ui::LDGSSMInterface)
 {
     ui->setupUi(this);
     setWindowTitle("LDG-SSM");
     scroll_area = ui->scrollArea;
-
-    auto [data_map, tree_properties] = readInput("some path");
-    if (data_map == nullptr) {
-        qDebug() << "No data set";
-        data_map = new QMap<QPair<size_t, size_t>, QPair<QImage, double>>();
-    }
-    GridController *grid_controller = new GridController(tree_properties);
-    ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
-    render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
-
-    QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
-
-    scroll_area->setWidget(render_view);
     initializeMenus();
+
+    // Begin by asking to open a file
+    openFile();
 }
 
 /**
@@ -40,6 +32,36 @@ LDGSSMInterface::~LDGSSMInterface()
     delete ui;
     delete render_view;
     delete scroll_area;
+}
+
+/**
+ * @brief LDGSSMInterface::openFile
+ */
+void LDGSSMInterface::openFile()
+{
+    // Remove current renderer if it exists
+    if (render_view != nullptr) {
+        scroll_area->takeWidget();
+        render_view->deleteLater();
+        render_view = nullptr;
+    }
+
+    // Get the file
+    QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
+    auto [data_map, tree_properties] = readInput(file_name);
+    if (data_map == nullptr || tree_properties == nullptr) {
+        QMessageBox msg_box;
+        msg_box.setText("The config couldn't be loaded.");
+        msg_box.exec();
+        return;
+    }
+
+    GridController *grid_controller = new GridController(tree_properties);
+    ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
+    render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
+    scroll_area->setWidget(render_view);
+    update();
 }
 
 /**
@@ -61,6 +83,7 @@ void LDGSSMInterface::initializeMenus()
 {
     // Initialize the file menu shortcuts.
     file_menu = ui->menuFile;
+    file_menu->addAction("Open", QKeySequence::Open, this, &LDGSSMInterface::openFile);
 
     // Initialize the view menu shortcuts.
     view_menu = ui->menuView;
