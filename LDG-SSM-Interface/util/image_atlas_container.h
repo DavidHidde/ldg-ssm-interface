@@ -17,6 +17,6 @@ struct ImageAtlasContainer
     ImageAtlasContainer(QMap<QPair<size_t, size_t>, QVector3D> mapping, QVector2D coord_offsets, QList<QImage> image_atlasses);
 };
 
-ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QImage> *data, size_t max_atlas_dim);
+ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QPair<QImage, double>> *data, size_t max_atlas_dim);
 
 #endif // IMAGE_ATLAS_H

@@ -7,6 +7,4 @@ size_t getParentIndex(size_t height, size_t index, TreeDrawProperties *tree_prop
 
 std::array<int, 4> getChildrenIndices(size_t height, size_t index, TreeDrawProperties *tree_properties);
 
-TreeDrawProperties *initializeTreeProperties(size_t num_rows, size_t num_cols);
-
 #endif // TREE_FUNCTIONS_H

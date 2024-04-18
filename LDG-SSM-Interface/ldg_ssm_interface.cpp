@@ -1,6 +1,7 @@
 #include "ldg_ssm_interface.h"
 #include "./ui_ldg_ssm_interface.h"
 #include "QtGui/qevent.h"
+#include "input/data_buffer.h"
 #include "util/tree_functions.h"
 #include "drawing/image_renderer.h"
 
@@ -16,17 +17,14 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent)
     setWindowTitle("LDG-SSM");
     scroll_area = ui->scrollArea;
 
-    auto draw_properties = initializeTreeProperties(80, 128);
-    GridController *grid_controller = new GridController(draw_properties);
-
-    QImage doot{":/doot.jpg"};
-    QImage frog{":/frog.jpg"};
-    int max_dim = std::max(doot.width(), doot.height());
-    QMap<std::pair<size_t, size_t>, QImage> *textures = new QMap<std::pair<size_t, size_t>, QImage>();
-    (*textures)[{0, 0}] = doot.scaled(max_dim, max_dim, Qt::KeepAspectRatio);
-    (*textures)[{0, 1}] = frog.scaled(max_dim, max_dim, Qt::KeepAspectRatio);
-    ImageRenderer *renderer = new ImageRenderer(draw_properties, textures);
-    render_view = new RenderView(scroll_area, draw_properties, grid_controller, renderer);
+    auto [data_map, tree_properties] = readInput("some path");
+    if (data_map == nullptr) {
+        qDebug() << "No data set";
+        data_map = new QMap<QPair<size_t, size_t>, QPair<QImage, double>>();
+    }
+    GridController *grid_controller = new GridController(tree_properties);
+    ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
+    render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
 
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
 

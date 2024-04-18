@@ -18,11 +18,11 @@ class ImageRenderer : public Renderer
     GLuint vertex_array_object;
     GLuint vertex_buffer, texcoord_buffer, texindex_buffer, index_buffer;
 
-    QMap<QPair<size_t, size_t>, QImage> *image_data;
+    QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data;
     ImageAtlasContainer atlas_container;
 
 public:
-    ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QImage> *image_data);
+    ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data);
     ~ImageRenderer();
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;

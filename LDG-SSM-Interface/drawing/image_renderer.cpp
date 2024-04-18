@@ -5,7 +5,7 @@
  * @param draw_properties
  * @param texture_map
  */
-ImageRenderer::ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QImage> *image_data):
+ImageRenderer::ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data):
     texture_array(QOpenGLTexture::Target2DArray),
     image_data(image_data),
     atlas_container({}, {}, {}),
@@ -132,6 +132,7 @@ void ImageRenderer::updateBuffers()
 
     unsigned int counter = 0;
     for (auto &[height, index] : draw_properties->draw_array) {
+        // TODO: Take void cells into account
         float side_len = draw_properties->height_node_lens[height];
         auto [num_rows, num_cols] = draw_properties->height_dims[height];
         double x = index % num_cols;
@@ -142,12 +143,7 @@ void ImageRenderer::updateBuffers()
             static_cast<float>(y * (side_len + draw_properties->node_spacing)),
             -1.
         };
-        // QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
-        QVector3D cell_texcoords{
-            index % 2 ? static_cast<float>(atlas_container.coord_offsets.x()) : 0.f,
-            0.f,
-            0.
-        };
+        QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
 
         // Top left - 0
         vertices.append(origin * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});

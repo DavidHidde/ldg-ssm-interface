@@ -22,9 +22,10 @@ ImageAtlasContainer::ImageAtlasContainer(QMap<QPair<size_t, size_t>, QVector3D> 
  * @param max_atlas_dim
  * @return
  */
-ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QImage> *data, size_t max_atlas_dim)
+ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QPair<QImage, double>> *data, size_t max_atlas_dim)
 {
-    float image_dim = std::max(data->first().width(), data->first().height());
+    auto [first_img, first_disparity] = data->first();
+    float image_dim = std::max(first_img.width(), first_img.height());
     size_t images_per_atlas_dim = std::floor(static_cast<float>(max_atlas_dim) / image_dim);
     size_t images_per_atlas = images_per_atlas_dim * images_per_atlas_dim;
     size_t num_atlasses = std::ceil(static_cast<float>(data->size()) / static_cast<float>(images_per_atlas));
@@ -39,8 +40,9 @@ ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QImage> *da
 
     // Fill mapping and atlasses
     size_t count = 0;
-    for (auto [key, image] : data->asKeyValueRange()) {
+    for (auto [key, data] : data->asKeyValueRange()) {
         auto [height, index] = key;
+        auto [image, disparity] = data;
         int atlas_idx = count / images_per_atlas;
         int canvas_idx = count % images_per_atlas;
         int canvas_x = (canvas_idx % images_per_atlas_dim) * image_dim;
