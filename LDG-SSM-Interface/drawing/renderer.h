@@ -5,7 +5,7 @@
 #include <QOpenGLFunctions_4_1_Core>
 #include <QOpenGLShaderProgram>
 
-#include "util/tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 
 /**
  * @brief The Renderer class Interface for render classes.

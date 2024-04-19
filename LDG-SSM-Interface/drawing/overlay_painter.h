@@ -3,7 +3,7 @@
 
 #include <QPainter>
 
-#include "util/tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 
 /**
  * @brief The OverlayPainter class Painter for drawing the grid overlay.

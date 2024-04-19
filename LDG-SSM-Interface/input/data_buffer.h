@@ -1,7 +1,7 @@
 #ifndef DATA_BUFFER_H
 #define DATA_BUFFER_H
 
-#include "util/tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 #include <QImage>
 #include <QMap>
 #include <QString>

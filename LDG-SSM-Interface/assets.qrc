@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>shaders/image.vert</file>
         <file>shaders/image.frag</file>
+        <file>shaders/volume_raycasting.frag</file>
+        <file>shaders/volume_raycasting.vert</file>
     </qresource>
 </RCC>

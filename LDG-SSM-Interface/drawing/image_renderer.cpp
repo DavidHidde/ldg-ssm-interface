@@ -1,4 +1,5 @@
 #include "image_renderer.h"
+#include "drawing/model/mesh.h"
 
 /**
  * @brief ImageRenderer::ImageRenderer
@@ -132,7 +133,6 @@ void ImageRenderer::updateBuffers()
 
     unsigned int counter = 0;
     for (auto &[height, index] : draw_properties->draw_array) {
-        // TODO: Take void cells into account
         float side_len = draw_properties->height_node_lens[height];
         auto [num_rows, num_cols] = draw_properties->height_dims[height];
         double x = index % num_cols;
@@ -145,34 +145,22 @@ void ImageRenderer::updateBuffers()
         };
         QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
 
-        // Top left - 0
-        vertices.append(origin * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() } );
-        // Top right - 1
-        vertices.append((origin + QVector3D{ side_len, 0., 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() } );
-        // Bot left - 2
-        vertices.append((origin + QVector3D{ 0., side_len, 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-        // Bot right - 3
-        vertices.append((origin + QVector3D{ side_len, side_len, 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-
-        // Arrange triangles
-        indices.append(counter);
-        indices.append(counter + 2);
-        indices.append(counter + 3);
-        indices.append(counter);
-        indices.append(counter + 1);
-        indices.append(counter + 3);
+        // Create and add mesh
+        auto mesh = createPlane(origin, side_len, draw_properties->gl_space_scale_vector, counter);
+        vertices.append(mesh.vertices);
+        indices.append(mesh.indices);
+        counter += mesh.vertices.size();
 
         // Add and assign texture layer
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
+        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() } );
+        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() } );
+        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
+        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
 
-        counter += 4;
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
     }
 
     // Bind and set data
@@ -187,6 +175,7 @@ void ImageRenderer::updateBuffers()
 
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
+    num_indices = indices.size();
 }
 
 /**
@@ -219,7 +208,7 @@ void ImageRenderer::render()
     gl->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     gl->glBindVertexArray(vertex_array_object);
-    gl->glDrawElements(GL_TRIANGLES, draw_properties->draw_array.size() * 6, GL_UNSIGNED_INT, nullptr);
+    gl->glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
     gl->glBindVertexArray(0);
 
     texture_array.release();

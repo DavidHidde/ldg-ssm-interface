@@ -1,6 +1,7 @@
 #ifndef TREEDRAWPROPERTIES_H
 #define TREEDRAWPROPERTIES_H
 
+#include "drawing/model/types.h"
 #include <cstddef>
 #include <QList>
 #include <QMatrix4x4>
@@ -15,6 +16,7 @@ struct TreeDrawProperties
     const QList<std::pair<size_t, size_t>> height_dims;
 
     // Data
+    DrawType draw_type;
     QSet<std::pair<size_t, size_t>> draw_array;             // The elements that should be drawn, consisting of [height, index] pairs.
     QSet<std::pair<size_t, size_t>> invalid_nodes;          // Void tile nodes.
 

@@ -27,7 +27,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
         util/tree_functions.h util/tree_functions.cpp
         widgets/render_view.h widgets/render_view.cpp
-        util/tree_draw_properties.h util/tree_draw_properties.cpp
+        drawing/model/tree_draw_properties.h
         drawing/overlay_painter.h drawing/overlay_painter.cpp
         assets.qrc
         util/grid_controller.h util/grid_controller.cpp
@@ -38,6 +38,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         input/visualization_configuration.h input/visualization_configuration.cpp
         input/json.h input/json.cpp
         input/data_buffer.h input/data_buffer.cpp
+        drawing/volume_raycaster.h drawing/volume_raycaster.cpp
+        drawing/model/types.h
+        drawing/model/mesh.h drawing/model/mesh.cpp
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

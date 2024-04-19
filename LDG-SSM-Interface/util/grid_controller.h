@@ -1,7 +1,7 @@
 #ifndef GRID_CONTROLLER_H
 #define GRID_CONTROLLER_H
 
-#include "tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 
 #include <QObject>
 #include <QMouseEvent>

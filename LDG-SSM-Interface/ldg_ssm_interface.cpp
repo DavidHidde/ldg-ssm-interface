@@ -5,6 +5,7 @@
 #include "drawing/image_renderer.h"
 #include <QFileDialog>
 #include <QMessageBox>
+#include <drawing/volume_raycaster.h>
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
@@ -57,11 +58,11 @@ void LDGSSMInterface::openFile()
     }
 
     GridController *grid_controller = new GridController(tree_properties);
-    ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
+    // ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
+    VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties);
     render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
     scroll_area->setWidget(render_view);
-    update();
 }
 
 /**

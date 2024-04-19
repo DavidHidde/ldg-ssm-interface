@@ -7,7 +7,7 @@
 
 #include "drawing/renderer.h"
 #include "drawing/overlay_painter.h"
-#include "util/tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 #include "util/grid_controller.h"
 
 /**

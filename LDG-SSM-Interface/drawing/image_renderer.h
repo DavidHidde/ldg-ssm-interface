@@ -21,6 +21,8 @@ class ImageRenderer : public Renderer
     QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data;
     ImageAtlasContainer atlas_container;
 
+    size_t num_indices;
+
 public:
     ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data);
     ~ImageRenderer() override;
