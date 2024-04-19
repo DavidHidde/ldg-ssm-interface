@@ -29,7 +29,7 @@ void OverlayPainter::drawOverlay()
     double pen_width = new_pen.width();
     double before_pixels = pen_width / 2;
 
-    for (auto [height, index] : draw_properties->draw_array) {
+    for (auto &[height, index] : draw_properties->draw_array) {
         double side_len = draw_properties->height_node_lens[height];
         auto [num_rows, num_cols] = draw_properties->height_dims[height];
         double x = index % num_cols;

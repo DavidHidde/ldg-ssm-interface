@@ -33,6 +33,9 @@ public:
     LDGSSMInterface(QWidget *parent = nullptr);    
     ~LDGSSMInterface();
 
+public slots:
+    void openFile();
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
 

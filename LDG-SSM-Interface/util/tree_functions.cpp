@@ -1,35 +1,6 @@
 #include "tree_functions.h"
 
 /**
- * @brief buildTree Setup draw properties based on given dimnensions.
- * @param num_rows
- * @param num_cols
- * @return
- */
-TreeDrawProperties *initializeTreeProperties(size_t num_rows, size_t num_cols)
-{
-    // Build tree dimensions.
-    size_t height = 1;
-    QList<std::pair<size_t, size_t>> height_dims{ { num_rows, num_cols } };
-    while (num_rows > 1 || num_cols > 1) {
-        num_rows = num_rows / 2 + num_rows % 2;
-        num_cols = num_cols / 2 + num_cols % 2;
-        height_dims.append({ num_rows, num_cols });
-        ++height;
-    }
-
-    // Create and set properties
-    TreeDrawProperties *properties = new TreeDrawProperties{ height - 1, height_dims };
-
-    properties->draw_array.insert({ height - 1, 0 }); // Contains root by default.
-
-    properties->node_spacing = 5.;  // Default spacing of 5.
-    properties->height_node_lens = QList<double>(height, 0.);
-
-    return properties;
-}
-
-/**
  * @brief getParentIndex Get the index of the parent of the specified node.
  * @param height
  * @param index

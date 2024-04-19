@@ -16,13 +16,14 @@ struct TreeDrawProperties
 
     // Data
     QSet<std::pair<size_t, size_t>> draw_array;             // The elements that should be drawn, consisting of [height, index] pairs.
+    QSet<std::pair<size_t, size_t>> invalid_nodes;          // Void tile nodes.
 
     // Screen space - Pixel sizes
     double node_spacing;                                    // Spacing between nodes in the grid.
-    QList<double> height_node_lens;                          // Lengths of the nodes at each height.
+    QList<double> height_node_lens;                         // Lengths of the nodes at each height.
 
     // OpenGL space - 3D projection matrices
-    double gl_space_scale_factor;                           // Scaling fcator for scaling from sceen space to OpenGL world space.
+    QVector3D gl_space_scale_vector;                        // Scaling fcator for scaling from sceen space to OpenGL world space.
     QMatrix4x4 model_view;
     QMatrix4x4 projection;
     QRect viewport;
