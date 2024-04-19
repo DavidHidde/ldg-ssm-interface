@@ -8,9 +8,10 @@
  */
 class VolumeRaycaster : public Renderer
 {
-    GLint model_view_projection_uniform;
+    GLint model_view_projection_uniform, screen_space_projection;
+
     GLuint vertex_array_object;
-    GLuint vertex_buffer, projection_index_buffer, index_buffer;
+    GLuint vertex_buffer, transformation_buffer, volume_buffer, projection_buffer, index_buffer;
 
     size_t num_indices;
 

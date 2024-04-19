@@ -47,32 +47,32 @@ Mesh createPlane(QVector3D origin, float side_len, QVector3D projection, unsigne
  * @param projection
  * @return
  */
-Mesh createCube(QVector3D origin, float side_len, QVector3D projection, unsigned int vertex_offset)
+Mesh createCube(QVector3D origin, float side_len)
 {
     return {
         {
-            project(origin, projection),                                                // Front top left - 0
-            project(origin + QVector3D{ side_len, 0., 0. }, projection),                // Front top right - 1
-            project(origin + QVector3D{ 0., side_len, 0. }, projection),                // Front bot left - 2
-            project(origin + QVector3D{ side_len, side_len, 0. }, projection),          // Front bot right - 3
-            project(origin + QVector3D{ 0., 0., side_len }, projection),                // Back top left - 4
-            project(origin + QVector3D{ side_len, 0., -side_len }, projection),         // Back top right - 5
-            project(origin + QVector3D{ 0., side_len, -side_len }, projection),         // Back bot left - 6
-            project(origin + QVector3D{ side_len, side_len, -side_len }, projection)    // Back bot right - 7
+            origin,                                                // Front top left - 0
+            origin + QVector3D{ side_len, 0., 0. },                // Front top right - 1
+            origin + QVector3D{ 0., side_len, 0. },                // Front bot left - 2
+            origin + QVector3D{ side_len, side_len, 0. },          // Front bot right - 3
+            origin + QVector3D{ 0., 0., side_len },                // Back top left - 4
+            origin + QVector3D{ side_len, 0., -side_len },         // Back top right - 5
+            origin + QVector3D{ 0., side_len, -side_len },         // Back bot left - 6
+            origin + QVector3D{ side_len, side_len, -side_len }    // Back bot right - 7
         },
         {
             // Front
-            vertex_offset, vertex_offset + 2, vertex_offset + 3,
-            vertex_offset, vertex_offset + 3, vertex_offset + 1,
+            0, 2, 3,
+            0, 3, 1,
             // Back
-            vertex_offset + 4, vertex_offset + 7, vertex_offset + 6,
-            vertex_offset + 4, vertex_offset + 5, vertex_offset + 7,
+            4, 7, 6,
+            4, 5, 7,
             // Left
-            vertex_offset + 4, vertex_offset + 6, vertex_offset + 2,
-            vertex_offset + 4, vertex_offset + 2, vertex_offset + 0,
+            4, 6, 2,
+            4, 2, 0,
             // Right
-            vertex_offset + 1, vertex_offset + 3, vertex_offset + 7,
-            vertex_offset + 4, vertex_offset + 7, vertex_offset + 5
+            1, 3, 7,
+            4, 7, 5
         }
     };
 }

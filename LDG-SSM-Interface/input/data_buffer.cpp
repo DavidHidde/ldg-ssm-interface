@@ -116,7 +116,7 @@ QPair<QMap<QPair<size_t, size_t>, QPair<QImage, double>> *, TreeDrawProperties *
     properties->draw_type = DrawType::IMAGE;
     properties->draw_array.insert({ max_height - 1, 0 }); // Contains root by default.
     properties->invalid_nodes = invalid_nodes;
-    properties->node_spacing = 5.;  // Default spacing of 5.
+    properties->node_spacing = 10.;  // Default spacing of 10.
     properties->height_node_lens = QList<double>(max_height, 0.);
 
     return { map, properties };

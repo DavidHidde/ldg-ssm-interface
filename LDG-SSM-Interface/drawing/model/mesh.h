@@ -15,6 +15,6 @@ struct Mesh
 
 Mesh createPlane(QVector3D origin, float side_len, QVector3D projection, unsigned int vertex_offset);
 
-Mesh createCube(QVector3D origin, float side_len, QVector3D projection, unsigned int vertex_offset);
+Mesh createCube(QVector3D origin, float side_len);
 
 #endif // MESH_H

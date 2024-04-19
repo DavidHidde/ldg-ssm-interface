@@ -1,6 +1,6 @@
 #version 410
 
-flat in uint vertex_projection_idx;
+flat in vec3 vertex_projection_origin;
 
 out vec4 fColor;
 
