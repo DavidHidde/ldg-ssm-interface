@@ -1,8 +1,11 @@
 #version 410
 
-flat in vec3 vertex_projection_origin;
+in vec3 frag_coords;
+flat in vec3 projection_origin;
 
 out vec4 fColor;
+
+uniform samplerBuffer volume_data;
 
 void main(void)
 {

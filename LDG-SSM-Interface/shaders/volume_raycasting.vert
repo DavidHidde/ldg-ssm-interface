@@ -2,16 +2,25 @@
 
 layout(location = 0) in vec3 vert_coord;
 layout(location = 1) in mat4 instance_transformation;
-// layout(location = 2) in uint[] volume_data;
-// layout(location = 3) in vec3 projection_origin;
+layout(location = 5) in vec3 input_projection_origin;
 
 uniform vec3 screen_space_projection;
-uniform mat4 model_view_projection_matrix;
+uniform mat4 model_view_matrix;
+uniform mat4 projection_matrix;
 
-flat out vec3 vertex_projection_origin;
+out vec3 frag_coords;
+flat out vec3 projection_origin;
+
+// Project a vector from screen space to world space
+vec4 project(vec3 vector)
+{
+    return vec4(screen_space_projection, 1.) * (instance_transformation * vec4(vector, 1.)) - vec4(1., 1., 0., 0.);
+}
 
 void main(void)
 {
-    gl_Position = model_view_projection_matrix * (vec4(screen_space_projection, 1.) * (instance_transformation * vec4(vert_coord, 1.)) - vec4(1., 1., 0., 0.));
-    vertex_projection_origin = vec3(0.);
+    frag_coords = vec3(model_view_matrix * project(vert_coord));
+    projection_origin = vec3(project(input_projection_origin));
+
+    gl_Position = projection_matrix * model_view_matrix * project(vert_coord);
 }

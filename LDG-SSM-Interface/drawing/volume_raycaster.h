@@ -8,20 +8,22 @@
  */
 class VolumeRaycaster : public Renderer
 {
-    GLint model_view_projection_uniform, screen_space_projection;
+    GLint projection_matrix_uniform, model_view_uniform, screen_space_projection_uniform, volume_data_uniform;
 
     GLuint vertex_array_object;
-    GLuint vertex_buffer, transformation_buffer, volume_buffer, projection_buffer, index_buffer;
+    GLuint volume_texture_object;
+    GLuint vertex_buffer, transformation_buffer, projection_buffer, volume_texture_buffer, index_buffer;
 
     size_t num_indices;
+
+    void initializeBuffers();
+    void initializeShaders();
 
 public:
     VolumeRaycaster(TreeDrawProperties *draw_properties);
     ~VolumeRaycaster() override;
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;
-    void initializeBuffers();
-    void initializeShaders();
 
     void updateBuffers() override;
     void updateUniforms() override;

@@ -23,14 +23,15 @@ class ImageRenderer : public Renderer
 
     size_t num_indices;
 
+    void initializeBuffers();
+    void initializeShaders();
+    void initializeTextures();
+
 public:
     ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data);
     ~ImageRenderer() override;
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;
-    void initializeBuffers();
-    void initializeShaders();
-    void initializeTextures();
 
     void updateBuffers() override;
     void updateUniforms() override;
