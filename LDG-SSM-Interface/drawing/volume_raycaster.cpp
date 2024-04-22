@@ -120,7 +120,7 @@ void VolumeRaycaster::updateBuffers()
 
     // Set data per instance
     QList<QMatrix4x4> transformation_matrices;
-    QList<unsigned char> volume_data(256 * 256 * 256 * draw_properties->draw_array.size(), 0.);
+    QList<unsigned char> volume_data(256 * 256 * 256 * draw_properties->draw_array.size(), 255);
     QList<QVector3D> projection_origins;
 
     for (auto &[height, index] : draw_properties->draw_array) {

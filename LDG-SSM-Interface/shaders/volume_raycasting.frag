@@ -9,5 +9,6 @@ uniform samplerBuffer volume_data;
 
 void main(void)
 {
-    fColor = vec4(1., 1., 1., 1.);
+    float color = texelFetch(volume_data, 0).r;
+    fColor = vec4(color, color, color, 1.);
 }
