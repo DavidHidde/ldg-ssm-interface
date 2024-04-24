@@ -90,16 +90,21 @@ void RenderView::paintGL()
 void RenderView::resizeGL(int width, int height)
 {
     // Update drawing properties.
+    float opengl_width = width * draw_properties->device_pixel_ratio;
+    float opengl_height = height * draw_properties->device_pixel_ratio;
     double side_len = width - 2; // Subtract 2 pixels to make sure we stay within the borders
     for (int curr_height = draw_properties->tree_max_height; curr_height >= 0; --curr_height) {
         draw_properties->height_node_lens[curr_height] = side_len;
         side_len = (side_len - draw_properties->node_spacing) / 2.;
     }
-    draw_properties->gl_space_scale_vector = QVector3D{2.f / static_cast<float>(width), 2.f / static_cast<float>(height), 1.f };
+    draw_properties->gl_space_scale_vector = QVector3D{
+        2.f / opengl_width,
+        2.f / opengl_height,
+        1.f
+    };
 
     // Update renderer
-    glViewport(0, 0, width, height);
-    draw_properties->viewport = QRect{ 0, 0, width, height };
+    glViewport(0, 0, opengl_width, opengl_height);
     renderer->updateUniforms();
     renderer->updateBuffers();
 }

@@ -132,15 +132,16 @@ void ImageRenderer::updateBuffers()
     QList<unsigned int> indices;
 
     unsigned int counter = 0;
+    float spacing = draw_properties->device_pixel_ratio * draw_properties->node_spacing;
     for (auto &[height, index] : draw_properties->draw_array) {
-        float side_len = draw_properties->height_node_lens[height];
+        float side_len = draw_properties->device_pixel_ratio * draw_properties->height_node_lens[height];
         auto [num_rows, num_cols] = draw_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
         QVector3D origin{
-            static_cast<float>(x * (side_len + draw_properties->node_spacing)),
-            static_cast<float>(y * (side_len + draw_properties->node_spacing)),
+            static_cast<float>(x * (side_len + spacing)),
+            static_cast<float>(y * (side_len + spacing)),
             -1.
         };
         QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];

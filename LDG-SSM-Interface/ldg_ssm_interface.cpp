@@ -50,6 +50,7 @@ void LDGSSMInterface::openFile()
     // Get the file
     QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
     auto [data_map, tree_properties] = readInput(file_name);
+    tree_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
     if (data_map == nullptr || tree_properties == nullptr) {
         QMessageBox msg_box;
         msg_box.setText("The config couldn't be loaded.");

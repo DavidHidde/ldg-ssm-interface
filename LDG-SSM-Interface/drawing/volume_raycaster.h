@@ -3,16 +3,19 @@
 
 #include "renderer.h"
 
+#include <QOpenGLTexture>
+
 /**
  * @brief The VolumeRaycaster class Renderer for performing volume raycasting
  */
 class VolumeRaycaster : public Renderer
 {
-    GLint projection_matrix_uniform, model_view_uniform, screen_space_projection_uniform, volume_data_uniform;
+    GLint projection_matrix_uniform, model_view_uniform, screen_space_projection_uniform, bounding_box_uniform;
 
     GLuint vertex_array_object;
-    GLuint volume_texture_object;
-    GLuint vertex_buffer, transformation_buffer, projection_buffer, volume_texture_buffer, index_buffer;
+    GLuint vertex_buffer, transformation_buffer, index_buffer;
+
+    QOpenGLTexture volume_texture;
 
     size_t num_indices;
 

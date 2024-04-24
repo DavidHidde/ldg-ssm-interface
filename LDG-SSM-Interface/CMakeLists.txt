@@ -41,6 +41,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         drawing/volume_raycaster.h drawing/volume_raycaster.cpp
         drawing/model/types.h
         drawing/model/mesh.h drawing/model/mesh.cpp
+        input/data.h
 
     )
 # Define target properties for Android with Qt 6 as:
@@ -82,6 +83,19 @@ FetchContent_MakeAvailable(helper)
 add_library(helper INTERFACE)
 target_include_directories(helper INTERFACE ${helper_SOURCE_DIR})
 target_link_libraries(LDG-SSM-Interface PRIVATE helper)
+
+# CImg
+FetchContent_Declare(
+    cimg
+    GIT_REPOSITORY https://github.com/GreycLab/CImg.git
+    GIT_TAG v.3.3.5
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+)
+FetchContent_MakeAvailable(cimg)
+add_library(cimg INTERFACE)
+target_include_directories(cimg INTERFACE ${cimg_SOURCE_DIR})
+target_link_libraries(LDG-SSM-Interface PRIVATE cimg)
 
 # BZip2 library
 find_package(BZip2 REQUIRED)

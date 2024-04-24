@@ -2,14 +2,12 @@
 
 layout(location = 0) in vec3 vert_coord;
 layout(location = 1) in mat4 instance_transformation;
-layout(location = 5) in vec3 input_projection_origin;
 
 uniform vec3 screen_space_projection;
-uniform mat4 model_view_matrix;
 uniform mat4 projection_matrix;
+uniform mat3 input_bounding_box;
 
-out vec3 frag_coords;
-flat out vec3 projection_origin;
+flat out mat3 bounding_box_coords;
 
 // Project a vector from screen space to world space
 vec4 project(vec3 vector)
@@ -19,8 +17,11 @@ vec4 project(vec3 vector)
 
 void main(void)
 {
-    frag_coords = vec3(model_view_matrix * project(vert_coord));
-    projection_origin = vec3(project(input_projection_origin));
+    bounding_box_coords = input_bounding_box;
 
-    gl_Position = projection_matrix * model_view_matrix * project(vert_coord);
+    bounding_box_coords[0] = vec3(project(bounding_box_coords[0]));
+    bounding_box_coords[1] = vec3(project(bounding_box_coords[1]));
+    bounding_box_coords[2] = vec3(project(bounding_box_coords[2]));
+
+    gl_Position = projection_matrix * project(vert_coord);
 }
