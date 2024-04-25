@@ -86,7 +86,7 @@ std::pair<int, int> GridController::resolveGridPosition(QPointF &position)
  */
 void GridController::handleMouseClick(QMouseEvent *event)
 {
-    if (event->buttons() == Qt::RightButton || event->buttons() == Qt::LeftButton) {
+    if (event->modifiers() != Qt::ControlModifier && (event->buttons() == Qt::RightButton || event->buttons() == Qt::LeftButton)) {
         auto position = event->position();
         auto [height, index] = resolveGridPosition(position);
 
@@ -101,6 +101,76 @@ void GridController::handleMouseClick(QMouseEvent *event)
                 emit gridChanged();
             }
         }
+    }
+}
+
+/**
+ * @brief GridController::mouseMoveEvent Handles the dragging and rotating of the mesh
+ * by looking at the mouse movement.
+ * @param event Mouse event.
+ * @param width
+ * @param height
+ */
+void GridController::handleMouseMoveEvent(QMouseEvent* event, float width, float height)
+{
+    // Reset drag if we're not dragging
+    if (event->buttons() != Qt::LeftButton || event->modifiers() != Qt::ControlModifier) {
+        is_dragging = false;
+        prev_dragging_position = QVector3D();
+    }
+
+    // Normalize coordinates
+    float x_ratio = event->position().x() / width;
+    float y_ratio = event->position().y() / height;
+
+    QVector3D mouse_pos = QVector3D(
+        (1. - x_ratio) * -1. + x_ratio * 1.,
+        (1. - y_ratio) * -1. + y_ratio * 1.,
+        0.0
+        );
+
+    // Project onto sphere
+    float sqr_z = 1.0f - QVector3D::dotProduct(mouse_pos, mouse_pos);
+    if (sqr_z > 0) {
+        mouse_pos.setZ(sqrt(sqr_z));
+    } else {
+        mouse_pos.normalize();
+    }
+
+    // Reset if we are starting a drag
+    if (!is_dragging) {
+        is_dragging = true;
+        prev_dragging_position = mouse_pos;
+        return;
+    }
+
+    // Calculate axis and angle
+    QVector3D new_pos = mouse_pos.normalized();
+    QVector3D curr_pos = prev_dragging_position.normalized();
+    QVector3D normal = QVector3D::crossProduct(curr_pos, new_pos).normalized();
+    if (normal.length() == 0.0f) {
+        prev_dragging_position = mouse_pos;
+        return;
+    }
+    float angle = 180.0f / M_PI * acos(QVector3D::dotProduct(curr_pos, new_pos));
+    rotation *= QQuaternion::fromAxisAndAngle(normal, angle);
+    prev_dragging_position = mouse_pos;
+
+    updateTransformations();
+    emit transformationChanged();
+}
+
+/**
+ * @brief GridController::handleMouseScrollEvent Move the camera when scrolling
+ * @param event
+ */
+void GridController::handleMouseScrollEvent(QWheelEvent *event)
+{
+    if (event->modifiers() == Qt::ControlModifier) {
+        float phi = event->angleDelta().y() / 200.0f;
+        translation.setZ(std::min(translation.z() + phi, 3.5f));
+        updateTransformations();
+        emit transformationChanged();;
     }
 }
 
@@ -122,4 +192,25 @@ void GridController::selectHeight(size_t height)
 
         emit gridChanged();
     }
+}
+
+/**
+ * @brief GridController::reset Reset the transformations.
+ */
+void GridController::reset()
+{
+    rotation = QQuaternion{};
+    translation = QVector3D{ 0., 0., 0. };
+    updateTransformations();
+    emit transformationChanged();
+}
+
+/**
+ * @brief GridController::updateTransformations Update the model view matrix
+ */
+void GridController::updateTransformations()
+{
+    draw_properties->model_view.setToIdentity();
+    draw_properties->model_view.rotate(rotation);
+    draw_properties->model_view.translate(translation);
 }

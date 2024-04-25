@@ -9,13 +9,14 @@ const vec3 colorNode2 = vec3(1, 0, 0);  // red
 
 layout(pixel_center_integer,  origin_upper_left) in vec4 gl_FragCoord;
 
-flat in mat3 bounding_box_coords;
+flat in vec3 viewport;
 
 out vec4 f_color;
 
 uniform sampler3D volume;
 uniform vec3 screen_space_projection;
 uniform mat4 model_view_matrix;
+uniform mat3 input_bounding_box;
 
 // Ray
 struct Ray {
@@ -110,29 +111,24 @@ bool intersectBoundingBox(Ray ray, BoundingBox bounding_box, out float t_near, o
 
 void main(void)
 {
-    vec3 ndc_pos = vec3(vec4(screen_space_projection, 1.) * gl_FragCoord - vec4(1., 1., 0., 0.));
+    // Figure out normalized location on screen
+    vec3 relative_pos = vec3(2. * (gl_FragCoord.xy - viewport.xy) / vec2(viewport.z, viewport.z) - 1., input_bounding_box[2].z + 2);
+    relative_pos = vec3(model_view_matrix * vec4(relative_pos, 1.));
     Ray ray;
-    ray.origin = bounding_box_coords[2];
-    ray.direction = normalize(ndc_pos - ray.origin);
-    // ray.direction.z *= -1;
-    // f_color = vec4(ray.direction, 1.);
-    // return;
+    ray.origin = vec3(model_view_matrix * vec4(input_bounding_box[2], 1.));
+    ray.direction = normalize(relative_pos - ray.origin);
 
     BoundingBox bounding_box;
-    bounding_box.min = bounding_box_coords[0];
-    bounding_box.max = bounding_box_coords[1];
+    bounding_box.min = input_bounding_box[0];
+    bounding_box.max = input_bounding_box[1];
 
     float t_near, t_far;
-    vec4 background = vec4(0.1, 0.2, 0.4, 1.0);
+    vec4 background = vec4(0., 0., 0., 1.0);
     bool hit = intersectBoundingBox(ray, bounding_box, t_near, t_far);
     if (!hit) {
         f_color = background;
         return;
     }
-    // f_color = vec4(1., 1., 0., 0.);
-    // return;
-    // f_color = vec4((ray.origin + t_far * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min), 1.);
-    // return;
 
     float t_step = (bounding_box.max.x - bounding_box.min.x) / num_samples;
     vec4 final_color = vec4(0.0);
@@ -146,10 +142,6 @@ void main(void)
         // Normalize texture coordinates based on volume
         vec3 pos = (ray.origin + t * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min);
         float value = texture(volume, pos).r;
-        // if (value > 0) {
-        //     f_color = vec4(1., 1., 1., 1.);
-        //     return;
-        // }
         if (value > maximum_intensity) {
             maximum_intensity = value;
         }

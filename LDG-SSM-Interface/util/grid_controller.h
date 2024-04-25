@@ -17,6 +17,11 @@ class GridController: public QObject
 
     TreeDrawProperties *draw_properties;
 
+    bool is_dragging = false;
+    QVector3D prev_dragging_position;
+    QQuaternion rotation;
+    QVector3D translation;
+
     void splitNode(size_t height, size_t index);
     void mergeNode(size_t height, size_t index);
 
@@ -26,15 +31,18 @@ public:
     GridController(TreeDrawProperties *draw_properties);
 
 public slots:
-    /**
-     * @brief GridController::handleMouseClick Finds the clicked node and splits or merges it if appropriate.
-     * @param event
-     */
     void handleMouseClick(QMouseEvent *event);
+    void handleMouseMoveEvent(QMouseEvent *event, float width, float height);
+    void handleMouseScrollEvent(QWheelEvent *event);
+
     void selectHeight(size_t height);
+
+    void reset();
+    void updateTransformations();
 
 signals:
     void gridChanged();
+    void transformationChanged();
 };
 
 #endif // GRID_CONTROLLER_H

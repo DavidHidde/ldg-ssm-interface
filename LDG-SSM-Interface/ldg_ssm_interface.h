@@ -35,6 +35,7 @@ public:
 
 public slots:
     void openFile();
+    void resetView();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;

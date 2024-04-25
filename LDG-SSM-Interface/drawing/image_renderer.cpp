@@ -37,9 +37,6 @@ void ImageRenderer::intialize(QOpenGLFunctions_4_1_Core *gl)
 {
     this->gl = gl;
 
-    // Enable depth buffer and culling
-    gl->glEnable(GL_DEPTH_TEST);
-    gl->glDepthFunc(GL_LEQUAL);
     gl->glEnable(GL_TEXTURE_2D_ARRAY);
 
     // Initialize matrices;

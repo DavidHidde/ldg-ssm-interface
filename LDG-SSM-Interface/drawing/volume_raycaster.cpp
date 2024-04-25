@@ -22,6 +22,7 @@ VolumeRaycaster::~VolumeRaycaster()
     gl->glDeleteVertexArrays(1, &vertex_array_object);
     gl->glDeleteBuffers(1, &vertex_buffer);
     gl->glDeleteBuffers(1, &transformation_buffer);
+    gl->glDeleteBuffers(1, &viewport_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
     volume_texture.destroy();
@@ -34,10 +35,6 @@ VolumeRaycaster::~VolumeRaycaster()
 void VolumeRaycaster::intialize(QOpenGLFunctions_4_1_Core *gl)
 {
     this->gl = gl;
-
-    // Enable depth buffer and culling
-    gl->glEnable(GL_DEPTH_TEST);
-    gl->glDepthFunc(GL_LEQUAL);
 
     // Initialize matrices;
     draw_properties->projection.setToIdentity();
@@ -57,8 +54,8 @@ void VolumeRaycaster::intialize(QOpenGLFunctions_4_1_Core *gl)
 void VolumeRaycaster::initializeBuffers()
 {
     GLuint vertex_buf_loc = 0;
-    GLuint transformation_buf_loc = 1;
-    GLuint bounding_box_buf_loc = 5;
+    GLuint viewport_buf_loc = 1;
+    GLuint transformation_buf_loc = 2;
 
     gl->glGenVertexArrays(1, &vertex_array_object);
     gl->glBindVertexArray(vertex_array_object);
@@ -67,6 +64,12 @@ void VolumeRaycaster::initializeBuffers()
     gl->glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     gl->glEnableVertexAttribArray(vertex_buf_loc);
     gl->glVertexAttribPointer(vertex_buf_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    gl->glGenBuffers(1, &viewport_buffer);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, viewport_buffer);
+    gl->glEnableVertexAttribArray(viewport_buf_loc);
+    gl->glVertexAttribPointer(viewport_buf_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    gl->glVertexAttribDivisor(viewport_buf_loc, 1); // Instanced
 
     // Mat4 requires 4 vertex attribute pointers
     gl->glGenBuffers(1, &transformation_buffer);
@@ -81,11 +84,13 @@ void VolumeRaycaster::initializeBuffers()
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
 
     gl->glBindVertexArray(0);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Temp create volume texture
     std::vector<unsigned char> data_buffer;
     readRawFile(
         data_buffer,
+
     );
     volume_texture.destroy();
     volume_texture.create();
@@ -118,7 +123,8 @@ void VolumeRaycaster::updateBuffers()
     double base_side_len = draw_properties->height_node_lens[draw_properties->tree_max_height] * draw_properties->device_pixel_ratio;
     auto mesh = createCube(
         QVector3D{ 0., 0., 0. },
-        base_side_len
+        base_side_len,
+        -1
     );
     gl->glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * mesh.vertices.size(), mesh.vertices.data(), GL_STATIC_DRAW);
@@ -128,6 +134,7 @@ void VolumeRaycaster::updateBuffers()
 
     // Set data per instance
     QList<QMatrix4x4> transformation_matrices;
+    QList<QVector3D> viewport_vectors;
     float spacing = draw_properties->node_spacing * draw_properties->device_pixel_ratio;
     for (auto &[height, index] : draw_properties->draw_array) {
         float side_len = draw_properties->height_node_lens[height] * draw_properties->device_pixel_ratio;
@@ -135,16 +142,25 @@ void VolumeRaycaster::updateBuffers()
         double x = index % num_cols;
         double y = index / num_cols;
 
+        // Transformation translates to the origin of the cell and then scales down to the appropriates sizes.
+        // We remove 2 pixels from each side to deal with overdraw of the overlay.
         QMatrix4x4 transformation;
         QVector3D origin{
-            static_cast<float>(x * (side_len + spacing)),
-            static_cast<float>(y * (side_len + spacing)),
+            static_cast<float>(x * (side_len + spacing)) + 2,
+            static_cast<float>(y * (side_len + spacing)) + 2,
             0.
         };
-        float factor = side_len / base_side_len;
+        float factor = (side_len - 4) / base_side_len;
         transformation.translate(origin);
         transformation.scale(factor, factor);
         transformation_matrices.append(transformation);
+
+        // Viewport consists of the origin and side lengths
+        viewport_vectors.append({
+            origin.x(),
+            origin.y(),
+            side_len
+        });
 
         // TODO: Add volume data
     }
@@ -152,6 +168,9 @@ void VolumeRaycaster::updateBuffers()
     // Bind and set data
     gl->glBindBuffer(GL_ARRAY_BUFFER, transformation_buffer);
     gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QMatrix4x4) * transformation_matrices.size(), transformation_matrices.data(), GL_STATIC_DRAW);
+
+    gl->glBindBuffer(GL_ARRAY_BUFFER, viewport_buffer);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * viewport_vectors.size(), viewport_vectors.data(), GL_STATIC_DRAW);
 }
 
 /**
@@ -172,19 +191,19 @@ void VolumeRaycaster::updateUniforms()
     gl->glUniform3f(screen_space_projection_uniform, vector.x(), vector.y(), vector.z());
 
     bounding_box_uniform = shader.uniformLocation("input_bounding_box");
-    double base_side_len = draw_properties->height_node_lens[draw_properties->tree_max_height] * draw_properties->device_pixel_ratio;
     auto mesh = createCube(
-        QVector3D{ 0., 0., 0. },
-        base_side_len
+        QVector3D{ -1., -1., -1. },
+        2,
+        1.
     );
     auto origin = mesh.vertices.first();
     auto end = mesh.vertices.last();
     auto center = (origin + end) / 2.;
 
     QMatrix3x3 bounding_box;
-    bounding_box(0, 0) = std::min(origin.x(), end.x()); bounding_box(0, 1) = std::min(origin.y(), end.y()); bounding_box(0, 2) = std::min(-origin.z(), -end.z());
-    bounding_box(1, 0) = std::max(origin.x(), end.x()); bounding_box(1, 1) = std::max(origin.y(), end.y()); bounding_box(1, 2) = std::max(-origin.z(), -end.z());
-    bounding_box(2, 0) = center.x();                    bounding_box(2, 1) = center.y();                    bounding_box(2, 2) = -100;
+    bounding_box(0, 0) = std::min(origin.x(), end.x()); bounding_box(0, 1) = std::min(origin.y(), end.y()); bounding_box(0, 2) = std::min(origin.z(), end.z());
+    bounding_box(1, 0) = std::max(origin.x(), end.x()); bounding_box(1, 1) = std::max(origin.y(), end.y()); bounding_box(1, 2) = std::max(origin.z(), end.z());
+    bounding_box(2, 0) = center.x();                    bounding_box(2, 1) = center.y();                    bounding_box(2, 2) = -3.5;
     gl->glUniformMatrix3fv(bounding_box_uniform, 1, true, bounding_box.data());
 
     shader.release();
@@ -194,7 +213,7 @@ void VolumeRaycaster::updateUniforms()
  * @brief VolumeRaycaster::render Actual draw call, where the objects need to be rendered.
  */
 void VolumeRaycaster::render()
-{
+{   
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
 
@@ -209,8 +228,8 @@ void VolumeRaycaster::render()
     gl->glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr, draw_properties->draw_array.size());
     gl->glBindVertexArray(0);
 
-    shader.release();
     volume_texture.release();
+    shader.release();
 }
 
 

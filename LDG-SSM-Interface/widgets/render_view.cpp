@@ -22,9 +22,11 @@ RenderView::RenderView(
     renderer(renderer),
     QOpenGLWidget(parent)
 {
+    setMouseTracking(true);
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 
-    QObject::connect(grid_controller, &GridController::gridChanged, this, &RenderView::update);
+    QObject::connect(grid_controller, &GridController::gridChanged, this, &RenderView::updateBuffers);
+    QObject::connect(grid_controller, &GridController::transformationChanged, this, &RenderView::updateUniforms);
 }
 
 /**
@@ -119,6 +121,24 @@ void RenderView::mousePressEvent(QMouseEvent *event)
 }
 
 /**
+ * @brief RenderView::mouseMoveEvent
+ * @param event
+ */
+void RenderView::mouseMoveEvent(QMouseEvent *event)
+{
+    grid_controller->handleMouseMoveEvent(event, width(), height());
+}
+
+/**
+ * @brief RenderView::wheelEvent
+ * @param event
+ */
+void RenderView::wheelEvent(QWheelEvent *event)
+{
+    grid_controller->handleMouseScrollEvent(event);
+}
+
+/**
  * @brief RenderView::onGLMessageLogged Pipe OpenGL debug messages to debug output.
  * @param message
  */
@@ -128,10 +148,27 @@ void RenderView::onGLMessageLogged(QOpenGLDebugMessage message)
 }
 
 /**
- * @brief RenderView::repaint Repaint slot since the build-in one doesn't seem to work.
+ * @brief RenderView::repaint Update the buffers and repaint if they changed.
  */
-void RenderView::update()
+void RenderView::updateBuffers()
 {
     renderer->updateBuffers();
     QOpenGLWidget::update();
+}
+
+/**
+ * @brief RenderView::updateUniforms Update the uniforms and repaint if they changed.
+ */
+void RenderView::updateUniforms()
+{
+    renderer->updateUniforms();
+    QOpenGLWidget::update();
+}
+
+/**
+ * @brief RenderView::resetView
+ */
+void RenderView::resetView()
+{
+    grid_controller->reset();
 }

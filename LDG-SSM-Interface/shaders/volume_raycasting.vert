@@ -1,13 +1,13 @@
 #version 410
 
 layout(location = 0) in vec3 vert_coord;
-layout(location = 1) in mat4 instance_transformation;
+layout(location = 1) in vec3 input_viewport;
+layout(location = 2) in mat4 instance_transformation;
 
 uniform vec3 screen_space_projection;
 uniform mat4 projection_matrix;
-uniform mat3 input_bounding_box;
 
-flat out mat3 bounding_box_coords;
+flat out vec3 viewport;
 
 // Project a vector from screen space to world space
 vec4 project(vec3 vector)
@@ -17,11 +17,6 @@ vec4 project(vec3 vector)
 
 void main(void)
 {
-    bounding_box_coords = input_bounding_box;
-
-    bounding_box_coords[0] = vec3(project(bounding_box_coords[0]));
-    bounding_box_coords[1] = vec3(project(bounding_box_coords[1]));
-    bounding_box_coords[2] = vec3(project(bounding_box_coords[2]));
-
+    viewport = input_viewport;
     gl_Position = projection_matrix * project(vert_coord);
 }

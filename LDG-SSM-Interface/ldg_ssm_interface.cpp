@@ -67,6 +67,15 @@ void LDGSSMInterface::openFile()
 }
 
 /**
+ * @brief LDGSSMInterface::resetView Reset the view to not zoomed in and reset the transformations.
+ */
+void LDGSSMInterface::resetView()
+{
+    render_view->resetView();
+    scroll_area->fitWindow();
+}
+
+/**
  * @brief LDGSSMInterface::keyPressEvent
  * @param event
  */
@@ -89,7 +98,7 @@ void LDGSSMInterface::initializeMenus()
 
     // Initialize the view menu shortcuts.
     view_menu = ui->menuView;
-    view_menu->addAction("Reset view", Qt::Key_R, scroll_area, &PannableScrollArea::fitWindow);
+    view_menu->addAction("Reset view", Qt::Key_R, this, &LDGSSMInterface::resetView);
     view_menu->addAction("Zoom in", QKeySequence::ZoomIn, scroll_area, &PannableScrollArea::zoomIn);
     view_menu->addAction("Zoom out", QKeySequence::ZoomOut, scroll_area, &PannableScrollArea::zoomOut);
 }

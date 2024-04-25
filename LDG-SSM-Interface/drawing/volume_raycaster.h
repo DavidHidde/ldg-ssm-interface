@@ -13,7 +13,7 @@ class VolumeRaycaster : public Renderer
     GLint projection_matrix_uniform, model_view_uniform, screen_space_projection_uniform, bounding_box_uniform;
 
     GLuint vertex_array_object;
-    GLuint vertex_buffer, transformation_buffer, index_buffer;
+    GLuint vertex_buffer, transformation_buffer, viewport_buffer, index_buffer;
 
     QOpenGLTexture volume_texture;
 
