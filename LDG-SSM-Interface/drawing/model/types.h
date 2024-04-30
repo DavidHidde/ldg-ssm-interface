@@ -17,7 +17,7 @@ enum VolumeRenderingType
 {
     ACCUMULATE,
     MAX,
-    MIN,
+    ISOSURFACE,
     AVERAGE
 };
 

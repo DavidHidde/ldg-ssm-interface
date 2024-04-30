@@ -3,14 +3,14 @@
 
 /**
  * @brief ImageRenderer::ImageRenderer
- * @param draw_properties
+ * @param tree_properties
  * @param texture_map
  */
-ImageRenderer::ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data):
+ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data):
     texture_array(QOpenGLTexture::Target2DArray),
     image_data(image_data),
     atlas_container({}, {}, {}),
-    Renderer(draw_properties)
+    Renderer(tree_properties)
 {
 }
 
@@ -40,9 +40,8 @@ void ImageRenderer::intialize(QOpenGLFunctions_4_1_Core *gl)
     gl->glEnable(GL_TEXTURE_2D_ARRAY);
 
     // Initialize matrices;
-    draw_properties->projection.setToIdentity();
-    draw_properties->model_view.setToIdentity();
-    draw_properties->projection.ortho(-1, 1, 1, -1, -1, 1);
+    tree_properties->projection.setToIdentity();
+    tree_properties->projection.ortho(-1, 1, 1, -1, -1, 1);
 
     initializeBuffers();
     initializeShaders();
@@ -98,7 +97,12 @@ void ImageRenderer::initializeTextures()
 {
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-    atlas_container = createAtlasContainer(image_data, max_texture_size);
+    QColor background_color = {
+        static_cast<int>(std::round(tree_properties->background_color.x() * 255.)),
+        static_cast<int>(std::round(tree_properties->background_color.y() * 255.)),
+        static_cast<int>(std::round(tree_properties->background_color.z() * 255.))
+    };
+    atlas_container = createAtlasContainer(image_data, max_texture_size, background_color);
     size_t num_atlasses = atlas_container.image_atlasses.size();
 
     texture_array.setMagnificationFilter(QOpenGLTexture::Linear);
@@ -129,10 +133,10 @@ void ImageRenderer::updateBuffers()
     QList<unsigned int> indices;
 
     unsigned int counter = 0;
-    float spacing = draw_properties->device_pixel_ratio * draw_properties->node_spacing;
-    for (auto &[height, index] : draw_properties->draw_array) {
-        float side_len = draw_properties->device_pixel_ratio * draw_properties->height_node_lens[height];
-        auto [num_rows, num_cols] = draw_properties->height_dims[height];
+    float spacing = tree_properties->device_pixel_ratio * tree_properties->node_spacing;
+    for (auto &[height, index] : tree_properties->draw_array) {
+        float side_len = tree_properties->device_pixel_ratio * tree_properties->height_node_lens[height];
+        auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
@@ -144,7 +148,7 @@ void ImageRenderer::updateBuffers()
         QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
 
         // Create and add mesh
-        auto mesh = createPlane(origin, side_len, draw_properties->gl_space_scale_vector, counter);
+        auto mesh = createPlane(origin, side_len, tree_properties->gl_space_scale_vector, counter);
         vertices.append(mesh.vertices);
         indices.append(mesh.indices);
         counter += mesh.vertices.size();
@@ -183,9 +187,8 @@ void ImageRenderer::updateUniforms()
 {
     shader.bind();
 
-    model_view_projection_uniform = shader.uniformLocation("model_view_projection_matrix");
-    auto matrix = draw_properties->projection * draw_properties->model_view;
-    gl->glUniformMatrix4fv(model_view_projection_uniform, 1, false, matrix.data());
+    model_view_projection_uniform = shader.uniformLocation("projection_matrix");
+    gl->glUniformMatrix4fv(model_view_projection_uniform, 1, false, tree_properties->projection.data());
 
     shader.release();
 }
@@ -198,7 +201,7 @@ void ImageRenderer::render()
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
 
-    gl->glClearColor(0.0, 0.0, 0.0, 1.0);
+    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.bind();

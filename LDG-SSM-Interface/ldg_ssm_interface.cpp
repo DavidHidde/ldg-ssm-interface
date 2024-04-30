@@ -5,6 +5,7 @@
 #include "drawing/image_renderer.h"
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QWindow>
 #include <drawing/volume_raycaster.h>
 
 /**
@@ -48,7 +49,8 @@ void LDGSSMInterface::openFile()
     }
 
     // Get the file
-    QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
+    // QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
+
     auto [data_map, tree_properties] = readInput(file_name);
     tree_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
     if (data_map == nullptr || tree_properties == nullptr) {
@@ -58,11 +60,28 @@ void LDGSSMInterface::openFile()
         return;
     }
 
-    GridController *grid_controller = new GridController(tree_properties);
+    VolumeDrawProperties *volume_properties = new VolumeDrawProperties();
+    volume_properties->camera_view_transformation.setToIdentity();
+    volume_properties->color_0 = { 0, 0, 1 };
+    volume_properties->color_1 = { 1, 1, 1 };
+    volume_properties->color_2 = { 1, 0, 0 };
+    volume_properties->render_type = VolumeRenderingType::MAX;
+    volume_properties->sample_steps = 100;
+    GridController *grid_controller = new GridController(tree_properties, volume_properties);
+    VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, volume_properties);
     // ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
-    VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties);
+
     render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
+    QObject::connect(window()->windowHandle(), &QWindow::screenChanged, render_view, &RenderView::screenChanged);
+
+    QPalette palette;
+    palette.setColor(QPalette::Window, QColor{
+        static_cast<int>(std::round(tree_properties->background_color.x() * 255)),
+        static_cast<int>(std::round(tree_properties->background_color.y() * 255)),
+        static_cast<int>(std::round(tree_properties->background_color.z() * 255))
+    });
+    centralWidget()->setPalette(palette);
     scroll_area->setWidget(render_view);
 }
 

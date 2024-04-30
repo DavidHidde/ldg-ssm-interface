@@ -20,9 +20,10 @@ ImageAtlasContainer::ImageAtlasContainer(QMap<QPair<size_t, size_t>, QVector3D> 
  *  Images are assumed to share one dimension, which should be the largest dimension. Resulting atlasses will be square with centered images.
  * @param data
  * @param max_atlas_dim
+ * @param background
  * @return
  */
-ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QPair<QImage, double>> *data, size_t max_atlas_dim)
+ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QPair<QImage, double>> *data, size_t max_atlas_dim, QColor background)
 {
     auto [first_img, first_disparity] = data->first();
     float image_dim = std::max(first_img.width(), first_img.height());
@@ -34,7 +35,7 @@ ImageAtlasContainer createAtlasContainer(QMap<QPair<size_t, size_t>, QPair<QImag
     // Initialize container contents
     QList<QImage> image_atlasses(num_atlasses, QImage{ atlas_dim, atlas_dim, QImage::Format_RGB32 });
     for (auto &img : image_atlasses)
-        img.fill(Qt::black);
+        img.fill(background);
     QVector2D coord_offsets = QVector2D{image_dim, image_dim} / QVector2D{ static_cast<float>(atlas_dim), static_cast<float>(atlas_dim) };
     QMap<QPair<size_t, size_t>, QVector3D> mapping;
 

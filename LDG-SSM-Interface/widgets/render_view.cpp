@@ -107,6 +107,7 @@ void RenderView::resizeGL(int width, int height)
 
     // Update renderer
     glViewport(0, 0, opengl_width, opengl_height);
+    draw_properties->viewport = { static_cast<float>(width), static_cast<float>(height) };
     renderer->updateUniforms();
     renderer->updateBuffers();
 }
@@ -126,7 +127,7 @@ void RenderView::mousePressEvent(QMouseEvent *event)
  */
 void RenderView::mouseMoveEvent(QMouseEvent *event)
 {
-    grid_controller->handleMouseMoveEvent(event, width(), height());
+    grid_controller->handleMouseMoveEvent(event);
 }
 
 /**
@@ -171,4 +172,14 @@ void RenderView::updateUniforms()
 void RenderView::resetView()
 {
     grid_controller->reset();
+}
+
+/**
+ * @brief RenderView::screenChanged Update the device pixel ratio when switching screens
+ */
+void RenderView::screenChanged()
+{
+    draw_properties->device_pixel_ratio = devicePixelRatio();
+    resizeGL(width(), height());
+    update();
 }

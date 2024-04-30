@@ -13,6 +13,7 @@
 class ImageRenderer : public Renderer
 {
     QOpenGLTexture texture_array;
+    QOpenGLShaderProgram shader;
 
     GLint model_view_projection_uniform;
     GLuint vertex_array_object;

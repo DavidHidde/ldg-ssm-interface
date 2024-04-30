@@ -1,20 +1,11 @@
 #version 410
 
-const float num_samples = 150;
-const float voxel_width = 1.0 / 64.0;
+layout(pixel_center_integer) in vec4 gl_FragCoord;
 
-const vec3 colorNode0 = vec3(0, 0, 1);  // blue
-const vec3 colorNode1 = vec3(1, 1, 1);  // white
-const vec3 colorNode2 = vec3(1, 0, 0);  // red
+uniform vec3 color_0;
+uniform vec3 color_1;
+uniform vec3 color_2;
 
-layout(pixel_center_integer,  origin_upper_left) in vec4 gl_FragCoord;
-
-flat in vec3 viewport;
-
-out vec4 f_color;
-
-uniform sampler3D volume;
-uniform vec3 screen_space_projection;
 uniform mat4 model_view_matrix;
 uniform mat3 input_bounding_box;
 
@@ -43,18 +34,18 @@ vec4 transferFunction(float value)
         alpha = 0.5;
 
     float t = 0.0;
-    vec3 color_0 = colorNode0;
-    vec3 color_1 = colorNode1;
+    vec3 blend_color_0 = color_0;
+    vec3 blend_color_1 = color_1;
     if (value < 0.5) {
         t = 2.0 * value;
     } else  {
         t = 2.0 * (value - 0.5);
-        color_0 = colorNode1;
-        color_1 = colorNode2;
+        blend_color_0 = color_1;
+        blend_color_1 = color_2;
     }
     vec4 color;
     color.a = alpha;
-    color.rgb = color_0 * (1.0 - t) + color_1 * t;
+    color.rgb = blend_color_0 * (1.0 - t) + blend_color_1 * t;
     return color;
 }
 
@@ -74,8 +65,8 @@ float opacityCorrection(in float alpha, in float sampling_ratio)
  * Accumulation composition
  *
  * @param sample: current sample value.
- * @param samplingRatio: the ratio between current sampling rate and the original. (ray step)
- * @param composedColor: blended color (both input and output)
+ * @param samplingRatio: the ratio between current sampling rate and the original. (ray step).
+ * @param composedColor: blended color (both input and output).
  */
 void accumulation(float value, float sampleRatio, inout vec4 composed_color)
 {
@@ -88,7 +79,7 @@ void accumulation(float value, float sampleRatio, inout vec4 composed_color)
 }
 
 /**
- * Intersects a ray with the bounding box and sets the intersection points
+ * Intersects a ray with the bounding box and sets the intersection points.
  * Returns true if the ray intersects the bounding box, false otherwise.
  */
 bool intersectBoundingBox(Ray ray, BoundingBox bounding_box, out float t_near, out float t_far)
@@ -109,47 +100,17 @@ bool intersectBoundingBox(Ray ray, BoundingBox bounding_box, out float t_near, o
     return (t_far > t_near);
 }
 
-void main(void)
+/**
+ * Find and set the current ray and bounding box from the input.
+ */
+void findPosition(vec3 viewport, out BoundingBox bounding_box, out Ray ray)
 {
-    // Figure out normalized location on screen
     vec3 relative_pos = vec3(2. * (gl_FragCoord.xy - viewport.xy) / vec2(viewport.z, viewport.z) - 1., input_bounding_box[2].z + 2);
     relative_pos = vec3(model_view_matrix * vec4(relative_pos, 1.));
-    Ray ray;
+
     ray.origin = vec3(model_view_matrix * vec4(input_bounding_box[2], 1.));
     ray.direction = normalize(relative_pos - ray.origin);
 
-    BoundingBox bounding_box;
     bounding_box.min = input_bounding_box[0];
     bounding_box.max = input_bounding_box[1];
-
-    float t_near, t_far;
-    vec4 background = vec4(0., 0., 0., 1.0);
-    bool hit = intersectBoundingBox(ray, bounding_box, t_near, t_far);
-    if (!hit) {
-        f_color = background;
-        return;
-    }
-
-    float t_step = (bounding_box.max.x - bounding_box.min.x) / num_samples;
-    vec4 final_color = vec4(0.0);
-    // ratio between current sampling rate vs. the original sampling rate
-    float sample_ratio = 1.0 / (num_samples * voxel_width);
-
-    // Main raycasting loop
-    float t = t_near;
-    float maximum_intensity = 0.0;
-    while(t < t_far) {
-        // Normalize texture coordinates based on volume
-        vec3 pos = (ray.origin + t * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min);
-        float value = texture(volume, pos).r;
-        if (value > maximum_intensity) {
-            maximum_intensity = value;
-        }
-
-        accumulation(value, sample_ratio, final_color);
-
-        t += t_step;
-    }
-    final_color = transferFunction(maximum_intensity);
-    f_color = final_color * final_color.a + (1.0 - final_color.a) * background;
 }

@@ -24,11 +24,12 @@ struct TreeDrawProperties
     double node_spacing;                                    // Spacing between nodes in the grid.
     QList<double> height_node_lens;                         // Lengths of the nodes at each height.
     float device_pixel_ratio;
+    QVector2D viewport;
 
-    // OpenGL space - 3D projection matrices
-    QVector3D gl_space_scale_vector;                        // Scaling fcator for scaling from sceen space to OpenGL world space.
-    QMatrix4x4 model_view;
+    // OpenGL space - 3D projection
+    QVector3D gl_space_scale_vector;                        // Scaling factor for scaling from sceen space to OpenGL world space.
     QMatrix4x4 projection;
+    QVector3D background_color;
 };
 
 #endif // TREEDRAWPROPERTIES_H

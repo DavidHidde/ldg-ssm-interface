@@ -118,6 +118,7 @@ QPair<QMap<QPair<size_t, size_t>, QPair<QImage, double>> *, TreeDrawProperties *
     properties->invalid_nodes = invalid_nodes;
     properties->node_spacing = 10.;  // Default spacing of 10.
     properties->height_node_lens = QList<double>(max_height, 0.);
+    properties->background_color = { 1., 1., 1. };
 
     return { map, properties };
 }

@@ -2,10 +2,10 @@
 
 /**
  * @brief Renderer::Renderer
- * @param draw_properties
+ * @param tree_properties
  */
-Renderer::Renderer(TreeDrawProperties *draw_properties):
-    draw_properties(draw_properties)
+Renderer::Renderer(TreeDrawProperties *tree_properties):
+    tree_properties(tree_properties)
 {
 }
 

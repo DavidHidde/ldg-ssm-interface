@@ -4,5 +4,9 @@
         <file>shaders/image.frag</file>
         <file>shaders/volume_raycasting.frag</file>
         <file>shaders/volume_raycasting.vert</file>
+        <file>shaders/isosurface.frag</file>
+        <file>shaders/max_intensity.frag</file>
+        <file>shaders/average_intensity.frag</file>
+        <file>shaders/accumulate.frag</file>
     </qresource>
 </RCC>

@@ -6,11 +6,13 @@
 
 /**
  * @brief VolumeRaycaster::VolumeRaycaster
- * @param draw_properties
+ * @param tree_properties
+ * @param volume_properties
  */
-VolumeRaycaster::VolumeRaycaster(TreeDrawProperties *draw_properties):
+VolumeRaycaster::VolumeRaycaster(TreeDrawProperties *tree_properties, VolumeDrawProperties *volume_properties):
+    volume_properties(volume_properties),
     volume_texture(QOpenGLTexture::Target3D),
-    Renderer(draw_properties)
+    Renderer(tree_properties)
 {
 }
 
@@ -26,6 +28,8 @@ VolumeRaycaster::~VolumeRaycaster()
     gl->glDeleteBuffers(1, &index_buffer);
 
     volume_texture.destroy();
+    qDeleteAll(shaders);
+    delete volume_properties;
 }
 
 /**
@@ -37,9 +41,8 @@ void VolumeRaycaster::intialize(QOpenGLFunctions_4_1_Core *gl)
     this->gl = gl;
 
     // Initialize matrices;
-    draw_properties->projection.setToIdentity();
-    draw_properties->model_view.setToIdentity();
-    draw_properties->projection.ortho(-1, 1, 1, -1, 0, -20);
+    tree_properties->projection.setToIdentity();
+    tree_properties->projection.ortho(-1, 1, 1, -1, 0, -20);
 
     initializeBuffers();
     initializeShaders();
@@ -96,7 +99,7 @@ void VolumeRaycaster::initializeBuffers()
     volume_texture.create();
     volume_texture.setWrapMode(QOpenGLTexture::ClampToEdge);
     volume_texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-    volume_texture.setSize(256, 256, 256);
+    volume_texture.setSize(512, 512, 361);
     volume_texture.setFormat(QOpenGLTexture::R8_UNorm);
     volume_texture.allocateStorage();
     QOpenGLPixelTransferOptions transfer_options;
@@ -109,9 +112,21 @@ void VolumeRaycaster::initializeBuffers()
  */
 void VolumeRaycaster::initializeShaders()
 {
-    shader.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/volume_raycasting.vert");
-    shader.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/volume_raycasting.frag");
-    shader.link();
+    QMap<QString, VolumeRenderingType> map{
+        // { "accumulate", VolumeRenderingType::ACCUMULATE },
+        // { "average_intensity", VolumeRenderingType::AVERAGE },
+        // { "isosurface", VolumeRenderingType::ISOSURFACE },
+        { "max_intensity", VolumeRenderingType::MAX }
+    };
+
+    for (auto [file_name, render_type] : map.asKeyValueRange()) {
+        QOpenGLShaderProgram *shader = new QOpenGLShaderProgram();
+        shader->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/volume_raycasting.vert");
+        shader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/" + file_name + ".frag");
+        shader->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/volume_raycasting.frag");
+        shader->link();
+        shaders.insert(render_type, shader);
+    }
 }
 
 /**
@@ -120,7 +135,7 @@ void VolumeRaycaster::initializeShaders()
 void VolumeRaycaster::updateBuffers()
 {
     // Set the base to-be-instanced shape and indices
-    double base_side_len = draw_properties->height_node_lens[draw_properties->tree_max_height] * draw_properties->device_pixel_ratio;
+    double base_side_len = tree_properties->height_node_lens[tree_properties->tree_max_height] * tree_properties->device_pixel_ratio;
     auto mesh = createCube(
         QVector3D{ 0., 0., 0. },
         base_side_len,
@@ -135,10 +150,11 @@ void VolumeRaycaster::updateBuffers()
     // Set data per instance
     QList<QMatrix4x4> transformation_matrices;
     QList<QVector3D> viewport_vectors;
-    float spacing = draw_properties->node_spacing * draw_properties->device_pixel_ratio;
-    for (auto &[height, index] : draw_properties->draw_array) {
-        float side_len = draw_properties->height_node_lens[height] * draw_properties->device_pixel_ratio;
-        auto [num_rows, num_cols] = draw_properties->height_dims[height];
+    float spacing = tree_properties->node_spacing * tree_properties->device_pixel_ratio;
+    float window_height = tree_properties->viewport.y() * tree_properties->device_pixel_ratio;
+    for (auto &[height, index] : tree_properties->draw_array) {
+        float side_len = tree_properties->height_node_lens[height] * tree_properties->device_pixel_ratio;
+        auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
@@ -158,7 +174,7 @@ void VolumeRaycaster::updateBuffers()
         // Viewport consists of the origin and side lengths
         viewport_vectors.append({
             origin.x(),
-            origin.y(),
+            window_height - origin.y() - side_len,    // gl_FragCoord starts at bottom left corner
             side_len
         });
 
@@ -178,19 +194,20 @@ void VolumeRaycaster::updateBuffers()
  */
 void VolumeRaycaster::updateUniforms()
 {
-    shader.bind();
+    auto shader = shaders[volume_properties->render_type];
+    shader->bind();
 
-    model_view_uniform = shader.uniformLocation("model_view_matrix");
-    gl->glUniformMatrix4fv(model_view_uniform, 1, false, draw_properties->model_view.data());
+    model_view_uniform = shader->uniformLocation("model_view_matrix");
+    gl->glUniformMatrix4fv(model_view_uniform, 1, false, volume_properties->camera_view_transformation.data());
 
-    projection_matrix_uniform = shader.uniformLocation("projection_matrix");
-    gl->glUniformMatrix4fv(projection_matrix_uniform, 1, false, draw_properties->projection.data());
+    projection_matrix_uniform = shader->uniformLocation("projection_matrix");
+    gl->glUniformMatrix4fv(projection_matrix_uniform, 1, false, tree_properties->projection.data());
 
-    screen_space_projection_uniform = shader.uniformLocation("screen_space_projection");
-    auto vector = draw_properties->gl_space_scale_vector;
+    screen_space_projection_uniform = shader->uniformLocation("screen_space_projection");
+    auto vector = tree_properties->gl_space_scale_vector;
     gl->glUniform3f(screen_space_projection_uniform, vector.x(), vector.y(), vector.z());
 
-    bounding_box_uniform = shader.uniformLocation("input_bounding_box");
+    bounding_box_uniform = shader->uniformLocation("input_bounding_box");
     auto mesh = createCube(
         QVector3D{ -1., -1., -1. },
         2,
@@ -206,7 +223,22 @@ void VolumeRaycaster::updateUniforms()
     bounding_box(2, 0) = center.x();                    bounding_box(2, 1) = center.y();                    bounding_box(2, 2) = -3.5;
     gl->glUniformMatrix3fv(bounding_box_uniform, 1, true, bounding_box.data());
 
-    shader.release();
+    num_samples_uniform = shader->uniformLocation("num_samples");
+    gl->glUniform1f(num_samples_uniform, volume_properties->sample_steps);
+
+    background_color_uniform = shader->uniformLocation("background_color");
+    gl->glUniform3f(background_color_uniform, tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z());
+
+    color_0_uniform = shader->uniformLocation("color_0");
+    gl->glUniform3f(color_0_uniform, volume_properties->color_0.x(), volume_properties->color_0.y(), volume_properties->color_0.z());
+
+    color_1_uniform = shader->uniformLocation("color_1");
+    gl->glUniform3f(color_1_uniform, volume_properties->color_1.x(), volume_properties->color_1.y(), volume_properties->color_1.z());
+
+    color_2_uniform = shader->uniformLocation("color_2");
+    gl->glUniform3f(color_2_uniform, volume_properties->color_2.x(), volume_properties->color_2.y(), volume_properties->color_2.z());
+
+    shader->release();
 }
 
 /**
@@ -217,19 +249,19 @@ void VolumeRaycaster::render()
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
 
-    gl->glClearColor(0.0, 0.0, 0.0, 1.0);
+    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    shader.bind();
+    shaders[volume_properties->render_type]->bind();
     volume_texture.bind();
     gl->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     gl->glBindVertexArray(vertex_array_object);
-    gl->glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr, draw_properties->draw_array.size());
+    gl->glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr, tree_properties->draw_array.size());
     gl->glBindVertexArray(0);
 
     volume_texture.release();
-    shader.release();
+    shaders[volume_properties->render_type]->release();
 }
 
 

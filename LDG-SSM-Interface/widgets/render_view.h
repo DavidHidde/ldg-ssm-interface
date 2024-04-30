@@ -38,6 +38,7 @@ public slots:
     void updateUniforms();
 
     void resetView();
+    void screenChanged();
 
 protected:
     void initializeGL() override;

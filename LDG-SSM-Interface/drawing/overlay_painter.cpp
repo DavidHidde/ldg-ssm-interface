@@ -22,7 +22,10 @@ void OverlayPainter::drawOverlay()
     // Set the pen
     QPen new_pen;
     new_pen.setWidth(1);
-    new_pen.setBrush(Qt::white);
+    if (draw_properties->background_color.x() + draw_properties->background_color.y() + draw_properties->background_color.z() < 1.5)
+        new_pen.setBrush(Qt::white);
+    else
+        new_pen.setBrush(Qt::black);
     setPen(new_pen);
 
     // Draw the overlay

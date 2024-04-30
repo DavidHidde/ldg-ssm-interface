@@ -7,6 +7,8 @@
 #include <QMouseEvent>
 #include <QPoint>
 
+#include <drawing/model/volume_draw_properties.h>
+
 
 /**
  * @brief The GridController class Controller class handling all grid actions.
@@ -15,7 +17,8 @@ class GridController: public QObject
 {
     Q_OBJECT;
 
-    TreeDrawProperties *draw_properties;
+    TreeDrawProperties *tree_properties;
+    VolumeDrawProperties *volume_properties;
 
     bool is_dragging = false;
     QVector3D prev_dragging_position;
@@ -28,11 +31,11 @@ class GridController: public QObject
     std::pair<int, int> resolveGridPosition(QPointF &position);
 
 public:
-    GridController(TreeDrawProperties *draw_properties);
+    GridController(TreeDrawProperties *draw_properties, VolumeDrawProperties *volume_properties);
 
 public slots:
     void handleMouseClick(QMouseEvent *event);
-    void handleMouseMoveEvent(QMouseEvent *event, float width, float height);
+    void handleMouseMoveEvent(QMouseEvent *event);
     void handleMouseScrollEvent(QWheelEvent *event);
 
     void selectHeight(size_t height);
