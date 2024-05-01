@@ -15,10 +15,10 @@ enum DrawType
  */
 enum VolumeRenderingType
 {
-    ACCUMULATE,
-    MAX,
     ISOSURFACE,
-    AVERAGE
+    MAX,
+    AVERAGE,
+    ACCUMULATE
 };
 
 #endif // TYPES_H

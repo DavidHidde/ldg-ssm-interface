@@ -113,9 +113,9 @@ void VolumeRaycaster::initializeBuffers()
 void VolumeRaycaster::initializeShaders()
 {
     QMap<QString, VolumeRenderingType> map{
-        // { "accumulate", VolumeRenderingType::ACCUMULATE },
-        // { "average_intensity", VolumeRenderingType::AVERAGE },
-        // { "isosurface", VolumeRenderingType::ISOSURFACE },
+        { "accumulate", VolumeRenderingType::ACCUMULATE },
+        { "average_intensity", VolumeRenderingType::AVERAGE },
+        { "isosurface", VolumeRenderingType::ISOSURFACE },
         { "max_intensity", VolumeRenderingType::MAX }
     };
 

@@ -20,6 +20,8 @@ struct VolumeDrawProperties
 
     // Isosurface specific
     float threshold;
+
+    VolumeDrawProperties();
 };
 
 #endif // VOLUME_DRAW_PROPERTIES_H

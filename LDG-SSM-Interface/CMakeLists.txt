@@ -42,7 +42,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         drawing/model/types.h
         drawing/model/mesh.h drawing/model/mesh.cpp
         input/data.h
-        drawing/model/volume_draw_properties.h
+        drawing/model/volume_draw_properties.h drawing/model/volume_draw_properties.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
