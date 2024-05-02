@@ -1,7 +1,5 @@
 #version 410
 
-const float voxel_width = 1.0 / 64.0;
-
 flat in vec3 viewport;
 
 uniform sampler3D volume;
@@ -45,8 +43,6 @@ void main(void)
 
     float t_step = (bounding_box.max.x - bounding_box.min.x) / num_samples;
     vec4 final_color = vec4(0.0);
-    // ratio between current sampling rate vs. the original sampling rate
-    float sample_ratio = 1.0 / (num_samples * voxel_width);
 
     // Main raycasting loop
     float t = t_near;
@@ -61,6 +57,5 @@ void main(void)
 
         t += t_step;
     }
-    final_color = transferFunction(maximum_intensity);
-    frag_color = final_color * final_color.a + (1.0 - final_color.a) * vec4(background_color, 1.);
+    frag_color = transferFunction(maximum_intensity);
 }

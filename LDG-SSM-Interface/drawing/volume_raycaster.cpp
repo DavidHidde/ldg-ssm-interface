@@ -238,6 +238,11 @@ void VolumeRaycaster::updateUniforms()
     color_2_uniform = shader->uniformLocation("color_2");
     gl->glUniform3f(color_2_uniform, volume_properties->color_2.x(), volume_properties->color_2.y(), volume_properties->color_2.z());
 
+    if (volume_properties->render_type == VolumeRenderingType::ISOSURFACE) {
+        threshold_uniform = shader->uniformLocation("threshold");
+        gl->glUniform1f(threshold_uniform, volume_properties->threshold);
+    }
+
     shader->release();
 }
 
