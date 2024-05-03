@@ -3,10 +3,14 @@
 const vec3 material_color = vec3(1., 1., 1.);
 const vec3 light_position = vec3(3., 0., -3.);
 
+flat in vec3 texture_coord_start;
 flat in vec3 viewport;
 
 uniform sampler3D volume;
 
+uniform mat4 model_view_matrix;
+
+uniform vec3 texture_coords_offset;
 uniform vec3 background_color;
 uniform float num_samples;
 uniform float threshold;
@@ -35,9 +39,9 @@ vec4 transferFunction(float value);
 vec3 normal(vec3 position, float intensity, float step_length)
 {
     float d = step_length;
-    float dx = texture(volume, position + vec3(d,0,0)).r - intensity;
-    float dy = texture(volume, position + vec3(0,d,0)).r - intensity;
-    float dz = texture(volume, position + vec3(0,0,d)).r - intensity;
+    float dx = texture(volume, texture_coord_start + (position + vec3(d, 0, 0)) * texture_coords_offset).r - intensity;
+    float dy = texture(volume, texture_coord_start + (position + vec3(0, d, 0)) * texture_coords_offset).r - intensity;
+    float dz = texture(volume, texture_coord_start + (position + vec3(0, 0, d)) * texture_coords_offset).r - intensity;
     return -normalize(vec3(dx, dy, dz));
 }
 
@@ -63,10 +67,10 @@ void main(void)
     while(t < t_far) {
         // Normalize texture coordinates based on volume
         vec3 pos = (ray.origin + t * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min);
-        float value = texture(volume, pos).r;
+        float value = texture(volume, texture_coord_start + pos * texture_coords_offset).r;
 
         if (value > threshold) {
-            vec3 L = normalize(light_position - pos);
+            vec3 L = normalize(vec3(model_view_matrix * vec4(light_position, 1.)) - pos);
             vec3 V = -normalize(ray.direction);
             vec3 N = normal(pos, value, t_step);
             vec3 H = normalize(L + V);

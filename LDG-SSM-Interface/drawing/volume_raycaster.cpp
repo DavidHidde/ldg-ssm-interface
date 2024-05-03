@@ -25,6 +25,7 @@ VolumeRaycaster::~VolumeRaycaster()
     gl->glDeleteBuffers(1, &vertex_buffer);
     gl->glDeleteBuffers(1, &transformation_buffer);
     gl->glDeleteBuffers(1, &viewport_buffer);
+    gl->glDeleteBuffers(1, &texture_coords_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
     volume_texture.destroy();
@@ -46,6 +47,7 @@ void VolumeRaycaster::intialize(QOpenGLFunctions_4_1_Core *gl)
 
     initializeBuffers();
     initializeShaders();
+    initializeTexture();
 
     updateBuffers();
     updateUniforms();
@@ -58,7 +60,8 @@ void VolumeRaycaster::initializeBuffers()
 {
     GLuint vertex_buf_loc = 0;
     GLuint viewport_buf_loc = 1;
-    GLuint transformation_buf_loc = 2;
+    GLuint texture_coords_buf_loc = 2;
+    GLuint transformation_buf_loc = 3;
 
     gl->glGenVertexArrays(1, &vertex_array_object);
     gl->glBindVertexArray(vertex_array_object);
@@ -74,6 +77,12 @@ void VolumeRaycaster::initializeBuffers()
     gl->glVertexAttribPointer(viewport_buf_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     gl->glVertexAttribDivisor(viewport_buf_loc, 1); // Instanced
 
+    gl->glGenBuffers(1, &texture_coords_buffer);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, texture_coords_buffer);
+    gl->glEnableVertexAttribArray(texture_coords_buf_loc);
+    gl->glVertexAttribPointer(texture_coords_buf_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    gl->glVertexAttribDivisor(texture_coords_buf_loc, 1); // Instanced
+
     // Mat4 requires 4 vertex attribute pointers
     gl->glGenBuffers(1, &transformation_buffer);
     gl->glBindBuffer(GL_ARRAY_BUFFER, transformation_buffer);
@@ -88,23 +97,6 @@ void VolumeRaycaster::initializeBuffers()
 
     gl->glBindVertexArray(0);
     gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Temp create volume texture
-    std::vector<unsigned char> data_buffer;
-    readRawFile(
-        data_buffer,
-
-    );
-    volume_texture.destroy();
-    volume_texture.create();
-    volume_texture.setWrapMode(QOpenGLTexture::ClampToEdge);
-    volume_texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
-    volume_texture.setSize(512, 512, 361);
-    volume_texture.setFormat(QOpenGLTexture::R8_UNorm);
-    volume_texture.allocateStorage();
-    QOpenGLPixelTransferOptions transfer_options;
-    transfer_options.setAlignment(1);
-    volume_texture.setData(0, QOpenGLTexture::Red, QOpenGLTexture::UInt8, data_buffer.data(), &transfer_options);
 }
 
 /**
@@ -130,6 +122,25 @@ void VolumeRaycaster::initializeShaders()
 }
 
 /**
+ * @brief VolumeRaycaster::initializeTexture Initialize the volume atlas.
+ */
+void VolumeRaycaster::initializeTexture()
+{
+    GLint max_texture_size;
+    glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &max_texture_size);
+    atlas_container = createVolumeAtlasContainer(tree_properties, max_texture_size);
+
+    volume_texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+    volume_texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear);
+    volume_texture.setSize(atlas_container.dims[0], atlas_container.dims[1], atlas_container.dims[2]);
+    volume_texture.setFormat(QOpenGLTexture::R8_UNorm);
+    volume_texture.allocateStorage();
+    QOpenGLPixelTransferOptions transfer_options;
+    transfer_options.setAlignment(1);
+    volume_texture.setData(0, QOpenGLTexture::Red, QOpenGLTexture::UInt8, atlas_container.data.data(), &transfer_options);
+}
+
+/**
  * @brief VolumeRaycaster::updateBuffers Put the appropriate volumes into memory
  */
 void VolumeRaycaster::updateBuffers()
@@ -150,6 +161,7 @@ void VolumeRaycaster::updateBuffers()
     // Set data per instance
     QList<QMatrix4x4> transformation_matrices;
     QList<QVector3D> viewport_vectors;
+    QList<QVector3D> volume_coords;
     float spacing = tree_properties->node_spacing * tree_properties->device_pixel_ratio;
     float window_height = tree_properties->viewport.y() * tree_properties->device_pixel_ratio;
     for (auto &[height, index] : tree_properties->draw_array) {
@@ -178,7 +190,8 @@ void VolumeRaycaster::updateBuffers()
             side_len
         });
 
-        // TODO: Add volume data
+        // For the texture coordinates we just need to know the start of the texture
+        volume_coords.append(atlas_container.mapping[{ height, index }]);
     }
 
     // Bind and set data
@@ -187,6 +200,9 @@ void VolumeRaycaster::updateBuffers()
 
     gl->glBindBuffer(GL_ARRAY_BUFFER, viewport_buffer);
     gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * viewport_vectors.size(), viewport_vectors.data(), GL_STATIC_DRAW);
+
+    gl->glBindBuffer(GL_ARRAY_BUFFER, texture_coords_buffer);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * volume_coords.size(), volume_coords.data(), GL_STATIC_DRAW);
 }
 
 /**
@@ -206,6 +222,9 @@ void VolumeRaycaster::updateUniforms()
     screen_space_projection_uniform = shader->uniformLocation("screen_space_projection");
     auto vector = tree_properties->gl_space_scale_vector;
     gl->glUniform3f(screen_space_projection_uniform, vector.x(), vector.y(), vector.z());
+
+    texture_coords_offset_uniform = shader->uniformLocation("texture_coords_offset");
+    gl->glUniform3f(texture_coords_offset_uniform, atlas_container.coord_offsets.x(), atlas_container.coord_offsets.y(), atlas_container.coord_offsets.z());
 
     bounding_box_uniform = shader->uniformLocation("input_bounding_box");
     auto mesh = createCube(

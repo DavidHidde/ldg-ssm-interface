@@ -53,24 +53,27 @@ void LDGSSMInterface::openFile()
 
     // Get the file
     QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
-
-    auto [data_map, tree_properties] = readInput(file_name);
-    if (data_map == nullptr || tree_properties == nullptr) {
+    tree_properties = readInput(file_name);
+    if (tree_properties == nullptr) {
         QMessageBox msg_box;
         msg_box.setText("The config couldn't be loaded.");
         msg_box.exec();
         return;
     }
 
+    // Initialize renderer
     tree_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
-    this->tree_properties = tree_properties;
-
     volume_properties = new VolumeDrawProperties();
     GridController *grid_controller = new GridController(tree_properties, volume_properties);
-    VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, volume_properties);
-    // ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
 
-    render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    if (tree_properties->draw_type == DrawType::IMAGE) {
+        ImageRenderer *renderer = new ImageRenderer(tree_properties);
+        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    } else {
+        VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, volume_properties);
+        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    }
+
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
     QObject::connect(window()->windowHandle(), &QWindow::screenChanged, render_view, &RenderView::screenChanged);
 

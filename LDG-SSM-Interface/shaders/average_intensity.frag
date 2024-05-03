@@ -1,9 +1,11 @@
 #version 410
 
+flat in vec3 texture_coord_start;
 flat in vec3 viewport;
 
 uniform sampler3D volume;
 
+uniform vec3 texture_coords_offset;
 uniform vec3 background_color;
 uniform float num_samples;
 
@@ -51,7 +53,7 @@ void main(void)
     while(t < t_far) {
         // Normalize texture coordinates based on volume
         vec3 pos = (ray.origin + t * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min);
-        float value = texture(volume, pos).r;
+        float value = texture(volume, texture_coord_start + pos * texture_coords_offset).r;
 
         accumulated_intensities += value;
         count += 1;

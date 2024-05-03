@@ -6,10 +6,8 @@
  * @param tree_properties
  * @param texture_map
  */
-ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data):
+ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties):
     texture_array(QOpenGLTexture::Target2DArray),
-    image_data(image_data),
-    atlas_container({}, {}, {}),
     Renderer(tree_properties)
 {
 }
@@ -26,7 +24,6 @@ ImageRenderer::~ImageRenderer()
     gl->glDeleteBuffers(1, &index_buffer);
 
     texture_array.destroy();
-    delete image_data;
 }
 
 /**
@@ -97,27 +94,23 @@ void ImageRenderer::initializeTextures()
 {
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-    QColor background_color = {
-        static_cast<int>(std::round(tree_properties->background_color.x() * 255.)),
-        static_cast<int>(std::round(tree_properties->background_color.y() * 255.)),
-        static_cast<int>(std::round(tree_properties->background_color.z() * 255.))
-    };
-    atlas_container = createAtlasContainer(image_data, max_texture_size, background_color);
-    size_t num_atlasses = atlas_container.image_atlasses.size();
+    atlas_container = createImageAtlasContainer(tree_properties, max_texture_size);
+    size_t num_atlasses = atlas_container.dims[2];
 
     texture_array.setMagnificationFilter(QOpenGLTexture::Linear);
     texture_array.setWrapMode(QOpenGLTexture::ClampToEdge);
     texture_array.setAutoMipMapGenerationEnabled(true);
 
     texture_array.setLayers(num_atlasses);
-    texture_array.setSize(atlas_container.image_atlasses[0].width(), atlas_container.image_atlasses[0].height());
+    texture_array.setSize(atlas_container.dims[0], atlas_container.dims[1]);
     texture_array.setFormat(QOpenGLTexture::RGBA8_UNorm);
     texture_array.allocateStorage();
 
     // Load the atlasses
+    auto *data_ptr = atlas_container.data.data();
+    size_t size_per_atlas = atlas_container.data.size() / num_atlasses;
     for (size_t idx = 0; idx < num_atlasses; ++idx) {
-        auto &atlas = atlas_container.image_atlasses[idx];
-        texture_array.setData(0, idx, QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, atlas.constBits());
+        texture_array.setData(0, idx, QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, data_ptr + idx * size_per_atlas);
     }
 }
 

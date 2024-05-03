@@ -2,11 +2,13 @@
 
 layout(location = 0) in vec3 vert_coord;
 layout(location = 1) in vec3 input_viewport;
-layout(location = 2) in mat4 instance_transformation;
+layout(location = 2) in vec3 input_texture_coord_start;
+layout(location = 3) in mat4 instance_transformation;
 
 uniform vec3 screen_space_projection;
 uniform mat4 projection_matrix;
 
+flat out vec3 texture_coord_start;
 flat out vec3 viewport;
 
 // Project a vector from screen space to world space
@@ -17,6 +19,7 @@ vec4 project(vec3 vector)
 
 void main(void)
 {
+    texture_coord_start = input_texture_coord_start;
     viewport = input_viewport;
     gl_Position = projection_matrix * project(vert_coord);
 }

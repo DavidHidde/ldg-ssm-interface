@@ -33,7 +33,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         util/grid_controller.h util/grid_controller.cpp
         drawing/renderer.h drawing/renderer.cpp
         drawing/image_renderer.h drawing/image_renderer.cpp
-        util/image_atlas_container.h util/image_atlas_container.cpp
+        util/atlas_container.h util/atlas_container.cpp
         input/input_configuration.h input/input_configuration.cpp
         input/visualization_configuration.h input/visualization_configuration.cpp
         input/json.h input/json.cpp
@@ -43,7 +43,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         drawing/model/mesh.h drawing/model/mesh.cpp
         input/data.h
         drawing/model/volume_draw_properties.h drawing/model/volume_draw_properties.cpp
-
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -69,34 +68,6 @@ target_link_libraries(LDG-SSM-Interface PRIVATE
     Qt::OpenGL
     Qt::OpenGLWidgets
 )
-
-include(FetchContent)
-
-# LDG Helper library - We need this to decompress .raw.bz2 files.
-FetchContent_Declare(
-  helper
-  GIT_REPOSITORY https://github.com/freysn/helper.git
-  GIT_TAG master
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-)
-FetchContent_MakeAvailable(helper)
-add_library(helper INTERFACE)
-target_include_directories(helper INTERFACE ${helper_SOURCE_DIR})
-target_link_libraries(LDG-SSM-Interface PRIVATE helper)
-
-# CImg
-FetchContent_Declare(
-    cimg
-    GIT_REPOSITORY https://github.com/GreycLab/CImg.git
-    GIT_TAG v.3.3.5
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-)
-FetchContent_MakeAvailable(cimg)
-add_library(cimg INTERFACE)
-target_include_directories(cimg INTERFACE ${cimg_SOURCE_DIR})
-target_link_libraries(LDG-SSM-Interface PRIVATE cimg)
 
 # BZip2 library
 find_package(BZip2 REQUIRED)
