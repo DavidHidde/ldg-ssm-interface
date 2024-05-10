@@ -1,15 +1,14 @@
 #include "image_renderer.h"
+#include "drawing/model/mesh.h"
 
 /**
  * @brief ImageRenderer::ImageRenderer
- * @param draw_properties
+ * @param tree_properties
  * @param texture_map
  */
-ImageRenderer::ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data):
+ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties):
     texture_array(QOpenGLTexture::Target2DArray),
-    image_data(image_data),
-    atlas_container({}, {}, {}),
-    Renderer(draw_properties)
+    Renderer(tree_properties)
 {
 }
 
@@ -25,7 +24,6 @@ ImageRenderer::~ImageRenderer()
     gl->glDeleteBuffers(1, &index_buffer);
 
     texture_array.destroy();
-    delete image_data;
 }
 
 /**
@@ -36,15 +34,11 @@ void ImageRenderer::intialize(QOpenGLFunctions_4_1_Core *gl)
 {
     this->gl = gl;
 
-    // Enable depth buffer and culling
-    gl->glEnable(GL_DEPTH_TEST);
-    gl->glDepthFunc(GL_LEQUAL);
     gl->glEnable(GL_TEXTURE_2D_ARRAY);
 
     // Initialize matrices;
-    draw_properties->projection.setToIdentity();
-    draw_properties->model_view.setToIdentity();
-    draw_properties->projection.ortho(-1, 1, 1, -1, -1, 1);
+    tree_properties->projection.setToIdentity();
+    tree_properties->projection.ortho(-1, 1, 1, -1, -1, 1);
 
     initializeBuffers();
     initializeShaders();
@@ -100,22 +94,23 @@ void ImageRenderer::initializeTextures()
 {
     GLint max_texture_size;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-    atlas_container = createAtlasContainer(image_data, max_texture_size);
-    size_t num_atlasses = atlas_container.image_atlasses.size();
+    atlas_container = createImageAtlasContainer(tree_properties, max_texture_size);
+    size_t num_atlasses = atlas_container.dims[2];
 
     texture_array.setMagnificationFilter(QOpenGLTexture::Linear);
     texture_array.setWrapMode(QOpenGLTexture::ClampToEdge);
     texture_array.setAutoMipMapGenerationEnabled(true);
 
     texture_array.setLayers(num_atlasses);
-    texture_array.setSize(atlas_container.image_atlasses[0].width(), atlas_container.image_atlasses[0].height());
+    texture_array.setSize(atlas_container.dims[0], atlas_container.dims[1]);
     texture_array.setFormat(QOpenGLTexture::RGBA8_UNorm);
     texture_array.allocateStorage();
 
     // Load the atlasses
+    auto *data_ptr = atlas_container.data.data();
+    size_t size_per_atlas = atlas_container.data.size() / num_atlasses;
     for (size_t idx = 0; idx < num_atlasses; ++idx) {
-        auto &atlas = atlas_container.image_atlasses[idx];
-        texture_array.setData(0, idx, QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, atlas.constBits());
+        texture_array.setData(0, idx, QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, data_ptr + idx * size_per_atlas);
     }
 }
 
@@ -131,48 +126,36 @@ void ImageRenderer::updateBuffers()
     QList<unsigned int> indices;
 
     unsigned int counter = 0;
-    for (auto &[height, index] : draw_properties->draw_array) {
-        // TODO: Take void cells into account
-        float side_len = draw_properties->height_node_lens[height];
-        auto [num_rows, num_cols] = draw_properties->height_dims[height];
+    float spacing = tree_properties->device_pixel_ratio * tree_properties->node_spacing;
+    for (auto &[height, index] : tree_properties->draw_array) {
+        float side_len = tree_properties->device_pixel_ratio * tree_properties->height_node_lens[height];
+        auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
         QVector3D origin{
-            static_cast<float>(x * (side_len + draw_properties->node_spacing)),
-            static_cast<float>(y * (side_len + draw_properties->node_spacing)),
+            static_cast<float>(x * (side_len + spacing)),
+            static_cast<float>(y * (side_len + spacing)),
             -1.
         };
         QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
 
-        // Top left - 0
-        vertices.append(origin * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() } );
-        // Top right - 1
-        vertices.append((origin + QVector3D{ side_len, 0., 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() } );
-        // Bot left - 2
-        vertices.append((origin + QVector3D{ 0., side_len, 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-        // Bot right - 3
-        vertices.append((origin + QVector3D{ side_len, side_len, 0. }) * draw_properties->gl_space_scale_vector - QVector3D{ 1., 1., 0.});
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-
-        // Arrange triangles
-        indices.append(counter);
-        indices.append(counter + 2);
-        indices.append(counter + 3);
-        indices.append(counter);
-        indices.append(counter + 1);
-        indices.append(counter + 3);
+        // Create and add mesh
+        auto mesh = createPlane(origin, side_len, tree_properties->gl_space_scale_vector, counter);
+        vertices.append(mesh.vertices);
+        indices.append(mesh.indices);
+        counter += mesh.vertices.size();
 
         // Add and assign texture layer
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
+        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() } );
+        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() } );
+        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
+        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
 
-        counter += 4;
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
+        texindices.append(cell_texcoords.z());
     }
 
     // Bind and set data
@@ -187,6 +170,7 @@ void ImageRenderer::updateBuffers()
 
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
     gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
+    num_indices = indices.size();
 }
 
 /**
@@ -196,9 +180,8 @@ void ImageRenderer::updateUniforms()
 {
     shader.bind();
 
-    model_view_projection_uniform = shader.uniformLocation("model_view_projection_matrix");
-    auto matrix = draw_properties->projection * draw_properties->model_view;
-    gl->glUniformMatrix4fv(model_view_projection_uniform, 1, false, matrix.data());
+    model_view_projection_uniform = shader.uniformLocation("projection_matrix");
+    gl->glUniformMatrix4fv(model_view_projection_uniform, 1, false, tree_properties->projection.data());
 
     shader.release();
 }
@@ -211,7 +194,7 @@ void ImageRenderer::render()
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
 
-    gl->glClearColor(0.0, 0.0, 0.0, 1.0);
+    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.bind();
@@ -219,7 +202,7 @@ void ImageRenderer::render()
     gl->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     gl->glBindVertexArray(vertex_array_object);
-    gl->glDrawElements(GL_TRIANGLES, draw_properties->draw_array.size() * 6, GL_UNSIGNED_INT, nullptr);
+    gl->glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
     gl->glBindVertexArray(0);
 
     texture_array.release();

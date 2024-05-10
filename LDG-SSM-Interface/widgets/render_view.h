@@ -7,7 +7,7 @@
 
 #include "drawing/renderer.h"
 #include "drawing/overlay_painter.h"
-#include "util/tree_draw_properties.h"
+#include "drawing/model/tree_draw_properties.h"
 #include "util/grid_controller.h"
 
 /**
@@ -34,7 +34,11 @@ public:
 
 public slots:
     void onGLMessageLogged(QOpenGLDebugMessage message);
-    void update();
+    void updateBuffers();
+    void updateUniforms();
+
+    void resetView();
+    void screenChanged();
 
 protected:
     void initializeGL() override;
@@ -42,6 +46,8 @@ protected:
     void resizeGL(int width, int height) override;
 
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 };
 
 #endif // RENDERVIEW_H

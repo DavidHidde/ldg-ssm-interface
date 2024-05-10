@@ -3,9 +3,9 @@
 layout(location = 0) in vec3 vertex_tex_coord;
 uniform sampler2DArray node_textures;
 
-out vec4 fColor;
+layout(location = 0) out vec4 frag_color;
 
 void main(void)
 {
-    fColor = texture(node_textures, vertex_tex_coord);
+    frag_color = texture(node_textures, vertex_tex_coord);
 }

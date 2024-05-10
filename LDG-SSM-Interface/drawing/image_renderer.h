@@ -4,7 +4,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 
-#include "util/image_atlas_container.h"
+#include "util/atlas_container.h"
 #include "renderer.h"
 
 /**
@@ -13,22 +13,25 @@
 class ImageRenderer : public Renderer
 {
     QOpenGLTexture texture_array;
+    QOpenGLShaderProgram shader;
 
     GLint model_view_projection_uniform;
     GLuint vertex_array_object;
     GLuint vertex_buffer, texcoord_buffer, texindex_buffer, index_buffer;
 
-    QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data;
-    ImageAtlasContainer atlas_container;
+    AtlasContainer atlas_container;
 
-public:
-    ImageRenderer(TreeDrawProperties *draw_properties, QMap<QPair<size_t, size_t>, QPair<QImage, double>> *image_data);
-    ~ImageRenderer() override;
+    size_t num_indices;
 
-    void intialize(QOpenGLFunctions_4_1_Core *gl) override;
     void initializeBuffers();
     void initializeShaders();
     void initializeTextures();
+
+public:
+    ImageRenderer(TreeDrawProperties *draw_properties);
+    ~ImageRenderer() override;
+
+    void intialize(QOpenGLFunctions_4_1_Core *gl) override;
 
     void updateBuffers() override;
     void updateUniforms() override;

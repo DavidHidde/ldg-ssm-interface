@@ -3,8 +3,11 @@
 #include "QtGui/qevent.h"
 #include "input/data_buffer.h"
 #include "drawing/image_renderer.h"
+#include <QColorDialog>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QWindow>
+#include <drawing/volume_raycaster.h>
 
 /**
  * @brief LDGSSMInterface::LDGSSMInterface
@@ -41,27 +44,151 @@ void LDGSSMInterface::openFile()
 {
     // Remove current renderer if it exists
     if (render_view != nullptr) {
-        scroll_area->takeWidget();
-        render_view->deleteLater();
+        auto render_widget = scroll_area->takeWidget();
+        render_widget->deleteLater();
         render_view = nullptr;
+        tree_properties = nullptr;
+        volume_properties = nullptr;
     }
 
     // Get the file
     QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
-    auto [data_map, tree_properties] = readInput(file_name);
-    if (data_map == nullptr || tree_properties == nullptr) {
+    tree_properties = readInput(file_name);
+    if (tree_properties == nullptr) {
         QMessageBox msg_box;
         msg_box.setText("The config couldn't be loaded.");
         msg_box.exec();
         return;
     }
 
-    GridController *grid_controller = new GridController(tree_properties);
-    ImageRenderer *renderer = new ImageRenderer(tree_properties, data_map);
-    render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    // Initialize renderer
+    tree_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
+    volume_properties = new VolumeDrawProperties();
+    GridController *grid_controller = new GridController(tree_properties, volume_properties);
+
+    if (tree_properties->draw_type == DrawType::IMAGE) {
+        ImageRenderer *renderer = new ImageRenderer(tree_properties);
+        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    } else {
+        VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, volume_properties);
+        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+    }
+
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
+    QObject::connect(window()->windowHandle(), &QWindow::screenChanged, render_view, &RenderView::screenChanged);
+
+    initializeUI();
     scroll_area->setWidget(render_view);
-    update();
+}
+
+/**
+ * @brief LDGSSMInterface::LDGSSMInterface Initialize the menus of the window.
+ */
+void LDGSSMInterface::initializeMenus()
+{
+    // Initialize the file menu shortcuts.
+    file_menu = ui->menuFile;
+    file_menu->addAction("Open", QKeySequence::Open, this, &LDGSSMInterface::openFile);
+
+    // Initialize the view menu shortcuts.
+    view_menu = ui->menuView;
+    view_menu->addAction("Reset view", Qt::Key_R, this, &LDGSSMInterface::resetView);
+    view_menu->addAction("Zoom in", QKeySequence::ZoomIn, scroll_area, &PannableScrollArea::zoomIn);
+    view_menu->addAction("Zoom out", QKeySequence::ZoomOut, scroll_area, &PannableScrollArea::zoomOut);
+}
+
+/**
+ * @brief LDGSSMInterface::initializeUI Initialize the dynamic UI based on the draw properties.
+ */
+void LDGSSMInterface::initializeUI()
+{
+    // Set background color
+    QPalette palette;
+    palette.setColor(QPalette::Window, {
+       static_cast<int>(std::round(tree_properties->background_color.x() * 255)),
+       static_cast<int>(std::round(tree_properties->background_color.y() * 255)),
+       static_cast<int>(std::round(tree_properties->background_color.z() * 255))
+    });
+    scroll_area->setPalette(palette);
+
+    // Height spin box
+    ui->heightSpinBox->blockSignals(true);
+    ui->heightSpinBox->setMaximum(tree_properties->tree_max_height);
+    ui->heightSpinBox->setValue(tree_properties->tree_max_height);
+    ui->heightSpinBox->blockSignals(false);
+
+    // Disparity slider
+    ui->disparitySlider->blockSignals(true);
+    ui->disparitySpinBox->blockSignals(true);
+    ui->disparitySlider->setValue(100);
+    ui->disparitySpinBox->setValue(1.);
+    ui->disparitySlider->blockSignals(false);
+    ui->disparitySpinBox->blockSignals(false);
+
+    // Volume settings panel
+    if (tree_properties->draw_type == DrawType::VOLUME) {
+        ui->volumeRenderSettingsPanel->setDisabled(false);
+
+        // Render type
+        ui->renderTypeSelectBox->blockSignals(true);
+        ui->renderTypeSelectBox->setCurrentIndex(static_cast<int>(volume_properties->render_type));
+        ui->renderTypeSelectBox->blockSignals(false);
+
+        // Sample steps
+        ui->sampleStepsSpinBox->blockSignals(true);
+        ui->sampleStepsSpinBox->setValue(volume_properties->sample_steps);
+        ui->sampleStepsSpinBox->blockSignals(false);
+
+        // Colors
+        QPixmap pixmap(16, 16);
+        QColor color{
+            static_cast<int>(std::round(volume_properties->color_0.x() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_0.y() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_0.z() * 255.f)),
+        };
+        pixmap.fill(color);
+        ui->color0PreviewLabel->setPixmap(pixmap);
+
+        color = {
+            static_cast<int>(std::round(volume_properties->color_1.x() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_1.y() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_1.z() * 255.f)),
+        };
+        pixmap.fill(color);
+        ui->color1PreviewLabel->setPixmap(pixmap);
+
+        color = {
+            static_cast<int>(std::round(volume_properties->color_2.x() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_2.y() * 255.f)),
+            static_cast<int>(std::round(volume_properties->color_2.z() * 255.f)),
+        };
+        pixmap.fill(color);
+        ui->color2PreviewLabel->setPixmap(pixmap);
+
+        // Threshold
+        ui->thresholdSlider->blockSignals(true);
+        ui->thresholdSpinBox->blockSignals(true);
+        ui->thresholdSlider->setValue(volume_properties->threshold * 100);
+        ui->thresholdSpinBox->setValue(volume_properties->threshold);
+        ui->thresholdSlider->blockSignals(false);
+        ui->thresholdSpinBox->blockSignals(false);
+
+        bool threshold_enabled = volume_properties->render_type != VolumeRenderingType::ISOSURFACE;
+        ui->thresholdSlider->setDisabled(threshold_enabled);
+        ui->thresholdSpinBox->setDisabled(threshold_enabled);
+        ui->thresholdLabel->setDisabled(threshold_enabled);
+    } else {
+        ui->volumeRenderSettingsPanel->setDisabled(true);
+    }
+}
+
+/**
+ * @brief LDGSSMInterface::resetView Reset the view to not zoomed in and reset the transformations.
+ */
+void LDGSSMInterface::resetView()
+{
+    render_view->resetView();
+    scroll_area->fitWindow();
 }
 
 /**
@@ -77,17 +204,170 @@ void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
 }
 
 /**
- * @brief LDGSSMInterface::LDGSSMInterface Initialize the menus of the window.
+ * @brief LDGSSMInterface::on_heightSpinBox_valueChanged
+ * @param value
  */
-void LDGSSMInterface::initializeMenus()
+void LDGSSMInterface::on_heightSpinBox_valueChanged(int value)
 {
-    // Initialize the file menu shortcuts.
-    file_menu = ui->menuFile;
-    file_menu->addAction("Open", QKeySequence::Open, this, &LDGSSMInterface::openFile);
+    emit selectionChanged(value);
+}
 
-    // Initialize the view menu shortcuts.
-    view_menu = ui->menuView;
-    view_menu->addAction("Reset view", Qt::Key_R, scroll_area, &PannableScrollArea::fitWindow);
-    view_menu->addAction("Zoom in", QKeySequence::ZoomIn, scroll_area, &PannableScrollArea::zoomIn);
-    view_menu->addAction("Zoom out", QKeySequence::ZoomOut, scroll_area, &PannableScrollArea::zoomOut);
+/**
+ * @brief LDGSSMInterface::on_backgroundColorSelectButton_clicked
+ */
+void LDGSSMInterface::on_backgroundColorSelectButton_clicked()
+{
+    const QColor color = QColorDialog::getColor(Qt::white, this, "Select background color");
+
+    if (color.isValid() && render_view != nullptr) {
+        tree_properties->background_color = {
+            static_cast<float>(color.red()) / 255.f,
+            static_cast<float>(color.green()) / 255.f,
+            static_cast<float>(color.blue()) / 255.f
+        };
+        QPalette palette;
+        palette.setColor(QPalette::Window, color);
+        scroll_area->setPalette(palette);
+
+        render_view->updateUniforms();
+    }
+}
+
+/**
+ * @brief LDGSSMInterface::on_disparitySlider_valueChanged
+ * @param value
+ */
+void LDGSSMInterface::on_disparitySlider_valueChanged(int value)
+{
+    ui->disparitySpinBox->blockSignals(true);
+    ui->disparitySpinBox->setValue(static_cast<float>(value) / 100.);
+    ui->disparitySpinBox->blockSignals(false);
+    // TODO: emit signal
+}
+
+/**
+ * @brief LDGSSMInterface::on_disparitySpinBox_valueChanged
+ * @param value
+ */
+void LDGSSMInterface::on_disparitySpinBox_valueChanged(double value)
+{
+    ui->disparitySlider->blockSignals(true);
+    ui->disparitySlider->setValue(value * 100);
+    ui->disparitySlider->blockSignals(false);
+    // TODO: emit signal
+}
+
+/**
+ * @brief LDGSSMInterface::on_renderTypeSelectBox_currentIndexChanged
+ * @param index
+ */
+void LDGSSMInterface::on_renderTypeSelectBox_currentIndexChanged(int index)
+{
+    volume_properties->render_type = static_cast<VolumeRenderingType>(index);
+
+    bool threshold_enabled = volume_properties->render_type != VolumeRenderingType::ISOSURFACE;
+    ui->thresholdSlider->setDisabled(threshold_enabled);
+    ui->thresholdSpinBox->setDisabled(threshold_enabled);
+    ui->thresholdLabel->setDisabled(threshold_enabled);
+
+    render_view->updateUniforms();
+}
+
+/**
+ * @brief LDGSSMInterface::on_sampleStepsSpinBox_valueChanged
+ * @param value
+ */
+void LDGSSMInterface::on_sampleStepsSpinBox_valueChanged(int value)
+{
+    volume_properties->sample_steps = value;
+    render_view->updateUniforms();
+}
+
+/**
+ * @brief LDGSSMInterface::on_transferFunctionColor0Button_clicked
+ */
+void LDGSSMInterface::on_transferFunctionColor0Button_clicked()
+{
+    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
+
+    if (color.isValid()) {
+        QPixmap pixmap(16, 16);
+        pixmap.fill(color);
+        ui->color0PreviewLabel->setPixmap(pixmap);
+
+        volume_properties->color_0 = {
+            static_cast<float>(color.red()) / 255.f,
+            static_cast<float>(color.green()) / 255.f,
+            static_cast<float>(color.blue()) / 255.f
+        };
+        render_view->updateUniforms();
+    }
+}
+
+/**
+ * @brief LDGSSMInterface::on_transferFunctionColor1Button_clicked
+ */
+void LDGSSMInterface::on_transferFunctionColor1Button_clicked()
+{
+    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
+
+    if (color.isValid()) {
+        QPixmap pixmap(16, 16);
+        pixmap.fill(color);
+        ui->color1PreviewLabel->setPixmap(pixmap);
+
+        volume_properties->color_1 = {
+            static_cast<float>(color.red()) / 255.f,
+            static_cast<float>(color.green()) / 255.f,
+            static_cast<float>(color.blue()) / 255.f
+        };
+        render_view->updateUniforms();
+    }
+}
+
+/**
+ * @brief LDGSSMInterface::on_transferFunctionColor2Button_clicked
+ */
+void LDGSSMInterface::on_transferFunctionColor2Button_clicked()
+{
+    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
+
+    if (color.isValid()) {
+        QPixmap pixmap(16, 16);
+        pixmap.fill(color);
+        ui->color2PreviewLabel->setPixmap(pixmap);
+
+        volume_properties->color_2 = {
+            static_cast<float>(color.red()) / 255.f,
+            static_cast<float>(color.green()) / 255.f,
+            static_cast<float>(color.blue()) / 255.f
+        };
+        render_view->updateUniforms();
+    }
+}
+
+/**
+ * @brief LDGSSMInterface::on_thresholdSlider_valueChanged
+ * @param value
+ */
+void LDGSSMInterface::on_thresholdSlider_valueChanged(int value)
+{
+    volume_properties->threshold = static_cast<float>(value) / 100.;
+    ui->thresholdSpinBox->blockSignals(true);
+    ui->thresholdSpinBox->setValue(static_cast<float>(value) / 100.);
+    ui->thresholdSpinBox->blockSignals(false);
+    render_view->updateUniforms();
+}
+
+/**
+ * @brief LDGSSMInterface::on_thresholdSpinBox_valueChanged
+ * @param value
+ */
+void LDGSSMInterface::on_thresholdSpinBox_valueChanged(double value)
+{
+    volume_properties->threshold = value;
+    ui->thresholdSlider->blockSignals(true);
+    ui->thresholdSlider->setValue(value * 100);
+    ui->thresholdSlider->blockSignals(false);
+    render_view->updateUniforms();
 }
