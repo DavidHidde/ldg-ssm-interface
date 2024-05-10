@@ -1,6 +1,6 @@
 #version 410
 
-const float voxel_width = 1.0 / 512.0;
+const float voxel_width = 1. / 128.;
 
 flat in vec3 texture_coord_start;
 flat in vec3 viewport;
@@ -38,8 +38,7 @@ vec4 transferFunction(float value);
  */
 float opacityCorrection(in float alpha, in float sample_ratio)
 {
-    float a_corrected = 1.0 - pow(1.0 - alpha, sample_ratio);
-    return a_corrected;
+    return 1.0 - pow(1.0 - alpha, sample_ratio);
 }
 
 /**
@@ -54,8 +53,8 @@ void accumulation(float value, float sample_ratio, inout vec4 composed_color)
     vec4 color = transferFunction(value);
     color.a = opacityCorrection(color.a, sample_ratio);
 
-    composed_color.xyz += (1.0 - composed_color.a) * color.xyz;
-    composed_color.a += (1.0 - composed_color.a) * color.a;
+    composed_color += (1.0 - composed_color.a) * color * color.a;
+    composed_color.a += (1. - composed_color.a) * color.a;
 }
 
 // Main raycasting loop
@@ -75,11 +74,10 @@ void main(void)
     float t_step = (bounding_box.max.x - bounding_box.min.x) / num_samples;
     vec4 final_color = vec4(0.0);
     // ratio between current sampling rate vs. the original sampling rate
-    float sample_ratio = 1.0 / (num_samples * voxel_width);
+    float sample_ratio = 1. / (num_samples * voxel_width);
 
     // Main raycasting loop
     float t = t_near;
-    float maximum_intensity = 0.0;
     while(t < t_far) {
         // Normalize texture coordinates based on volume
         vec3 pos = (ray.origin + t * ray.direction - bounding_box.min) / (bounding_box.max - bounding_box.min);
@@ -93,6 +91,6 @@ void main(void)
 
         t += t_step;
     }
-    final_color = transferFunction(maximum_intensity);
+    clamp(final_color.a, 0, 1);
     frag_color = final_color * final_color.a + (1.0 - final_color.a) * vec4(background_color, 1.);
 }

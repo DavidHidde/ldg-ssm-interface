@@ -63,7 +63,8 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
 
     std::vector<int> assignment_buffer(idx, -1);
     QString data_path = fixPath(config.assignment_path, config_dir_path);
-    if (!readFileIntoBuffer(assignment_buffer, data_path)) {
+    if (readFileIntoBuffer(assignment_buffer, data_path) != idx) {
+        qDebug() << "Sizes:" << assignment_buffer.size() << idx;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
         return nullptr;
     }
@@ -72,15 +73,17 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
     size_t data_elem_size = vis_data_config.data_dims[0] * vis_data_config.data_dims[1] * vis_data_config.data_dims[2];
     std::vector<unsigned char> data_buffer(vis_data_config.num_elements * data_elem_size);
     data_path = fixPath(vis_data_config.data_path, (QFileInfo(fixPath(config.visualization_config_path, config_dir_path))).path());
-    if (!readFileIntoBuffer(data_buffer, data_path)) {
+    if (readFileIntoBuffer(data_buffer, data_path) != vis_data_config.num_elements * data_elem_size) {
+        qDebug() << "Sizes:" << data_buffer.size() << vis_data_config.num_elements * data_elem_size;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
         return nullptr;
     }
 
     // Load disparities
-    std::vector<int> disparity_buffer(idx, -1);
+    std::vector<double> disparity_buffer(idx, -1);
     data_path = fixPath(disparity_config.data_path, (QFileInfo(fixPath(config.disparity_config_path, config_dir_path))).path());
-    if (!readFileIntoBuffer(disparity_buffer, data_path)) {
+    if (readFileIntoBuffer(disparity_buffer, data_path) != disparity_config.num_elements) {
+        qDebug() << "Sizes:" << disparity_buffer.size() << disparity_config.num_elements;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
         return nullptr;
     }

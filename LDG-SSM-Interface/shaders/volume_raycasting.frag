@@ -23,29 +23,35 @@ struct BoundingBox {
 
 /**
  * Evaluates the transfer function for a given sample value
+ * TODO: Make interactive in some way
  *
  * @param value The sample value
  * @return The color for the given sample value
  */
 vec4 transferFunction(float value)
 {
-    float alpha = value * 0.1; // value;
-    if (value < 0.2)
-        alpha = 0.5;
+    vec4 color = vec4(0.);
 
-    float t = 0.0;
-    vec3 blend_color_0 = color_0;
-    vec3 blend_color_1 = color_1;
-    if (value < 0.5) {
-        t = 2.0 * value;
-    } else  {
-        t = 2.0 * (value - 0.5);
-        blend_color_0 = color_1;
-        blend_color_1 = color_2;
-    }
-    vec4 color;
-    color.a = alpha;
-    color.rgb = blend_color_0 * (1.0 - t) + blend_color_1 * t;
+    if (value >= 0.0 && value < 0.1) color = vec4(0.19483, 0.08339, 0.26149, value * 0.05);
+
+    if (value >= 0.1 && value < 0.2) color = vec4(0.27648, 0.48144, 0.95064, value * 0.05);
+
+    if (value >= 0.2 && value < 0.3) color = vec4(0.96187, 0.41093, 0.09310, value * 0.05);
+
+    if (value >= 0.3 && value < 0.4) color = vec4(0.49321, 0.01963, 0.00955, value * 0.05);
+
+    if (value >= 0.4 && value < 0.5) color = vec4(0.11167, 0.80569, 0.84525, value * 0.05);
+
+    if (value >= 0.5 && value < 0.6) color = vec4(0.12733, 0.91701, 0.67627, value * 0.05);
+
+    if (value >= 0.6 && value < 0.7) color = vec4(0.63323, 0.99195, 0.23937, value * 0.05);
+
+    if (value >= 0.7 && value < 0.8) color = vec4(0.99438, 0.66386, 0.19971, value * 0.05);
+
+    if (value >= 0.8 && value < 0.9) color = vec4(0.86079, 0.22945, 0.02875, value * 0.05);
+
+    if (value >= 0.9 && value < 1.0) color = vec4(0.57103, 0.04474, 0.00529, value * 0.05);
+
     return color;
 }
 

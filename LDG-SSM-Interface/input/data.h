@@ -86,15 +86,15 @@ long readBZipFile(std::vector<DataType> &buffer, std::string file_name)
  * @return
  */
 template<typename DataType>
-bool readFileIntoBuffer(std::vector<DataType> &buffer, QString file_name)
+long readFileIntoBuffer(std::vector<DataType> &buffer, QString file_name)
 {
     if (file_name.endsWith(".bz2")) {
-        return readBZipFile(buffer, file_name.toStdString()) > 0;
+        return readBZipFile(buffer, file_name.toStdString());
     }
     if (file_name.endsWith(".raw")) {
-        return readRawFile(buffer, file_name.toStdString()) > 0;
+        return readRawFile(buffer, file_name.toStdString());
     }
-    return false;
+    return -1;
 }
 
 #endif // DATA_H

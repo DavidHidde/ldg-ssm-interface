@@ -32,7 +32,7 @@ QPair<std::array<size_t, 3>, size_t> determineAtlasDims(TreeDrawProperties *draw
             static_cast<size_t>(std::min(num_rows, elements_per_dim) * max_dim),
             static_cast<size_t>(draw_properties->draw_type == DrawType::IMAGE ? depth : depth * max_dim)
         },
-        max_dim
+        static_cast<size_t>(max_dim)
     };
 }
 
@@ -73,8 +73,8 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
     // Fill mapping and atlasses
     size_t count = 0;
     for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
-        auto [height, index] = key;
-        auto [raw_image, _] = data;
+        auto &[height, index] = key;
+        auto &[raw_image, _] = data;
         QImage image{ raw_image.data(), static_cast<int>(img_width), static_cast<int>(img_height), QImage::Format_RGBA8888 };
         int atlas_idx = count / images_per_atlas;
         int canvas_idx = count % images_per_atlas;
@@ -130,29 +130,28 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
     container.data = QList<unsigned char>(atlas_dims[0] * atlas_dims[1] * atlas_dims[2], 0);
 
     size_t volumes_per_atlas_dim = std::floor(atlas_dims[0] / atlas_block_size);
-    size_t volumes_per_atlas_slice = (atlas_dims[0] * atlas_dims[1]) / (atlas_block_size * atlas_block_size);
+    size_t volumes_per_atlas_slice = volumes_per_atlas_dim * volumes_per_atlas_dim;
 
     size_t x_volume_offset = (atlas_block_size - volume_width) / 2;
     size_t y_volume_offset = (atlas_block_size - volume_height) / 2;
     size_t z_volume_offset = (atlas_block_size - volume_depth) / 2;
 
     size_t row_offset = atlas_dims[0];
-    size_t slice_offset = atlas_dims[0] * atlas_dims[2];
+    size_t slice_offset = atlas_dims[0] * atlas_dims[1];
 
     // Build the atlas by copying data from the volume buffers to the container buffer.
     size_t count = 0;
     for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
-        auto [height, index] = key;
-        auto [volume_data, _] = data;
+        auto &[volume_data, _] = data;
 
         size_t atlas_x = count % volumes_per_atlas_dim;
-        size_t atlas_y = count / volumes_per_atlas_dim;
+        size_t atlas_y = (count % volumes_per_atlas_slice) / volumes_per_atlas_dim;
         size_t atlas_z = count / volumes_per_atlas_slice;
         size_t origin = atlas_x * atlas_block_size + x_volume_offset +
                         atlas_y * row_offset * atlas_block_size + y_volume_offset * row_offset +
                         atlas_z * slice_offset * atlas_block_size + z_volume_offset * slice_offset;
 
-        container.mapping[{ height, index }] = QVector3D{
+        container.mapping[key] = QVector3D{
             static_cast<float>(atlas_x * atlas_block_size) / static_cast<float>(atlas_dims[0]),
             static_cast<float>(atlas_y * atlas_block_size) / static_cast<float>(atlas_dims[1]),
             static_cast<float>(atlas_z * atlas_block_size) / static_cast<float>(atlas_dims[2])
@@ -163,7 +162,7 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
                 for (size_t volume_x = 0; volume_x < volume_width; ++volume_x) {
                     size_t container_idx = origin + volume_x + volume_y * row_offset + volume_z * slice_offset;
                     size_t volume_idx = volume_x + volume_y * volume_width + volume_z * volume_width * volume_height;
-                    container.data[container_idx] = volume_data[volume_idx];
+                    container.data[container_idx] = volume_data[volume_idx];   
                 }
             }
         }
