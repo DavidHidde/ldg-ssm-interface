@@ -1,14 +1,5 @@
 #include "atlas_container.h"
 #include <QPainter>
-#include <QDebug>
-
-struct Color
-{
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-    unsigned char a;
-};
 
 /**
  * @brief determineAtlasDims Determine the size of the atlas to be generated. For every image/volume, we allocate a square of max_dim dims.

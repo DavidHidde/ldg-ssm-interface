@@ -4,11 +4,12 @@
 /**
  * @brief ImageRenderer::ImageRenderer
  * @param tree_properties
+ * @param window_properties
  * @param texture_map
  */
-ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties):
+ImageRenderer::ImageRenderer(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties):
     texture_array(QOpenGLTexture::Target2DArray),
-    Renderer(tree_properties)
+    Renderer(tree_properties, window_properties)
 {
 }
 
@@ -126,9 +127,9 @@ void ImageRenderer::updateBuffers()
     QList<unsigned int> indices;
 
     unsigned int counter = 0;
-    float spacing = tree_properties->device_pixel_ratio * tree_properties->node_spacing;
+    float spacing = window_properties->device_pixel_ratio * window_properties->node_spacing;
     for (auto &[height, index] : tree_properties->draw_array) {
-        float side_len = tree_properties->device_pixel_ratio * tree_properties->height_node_lens[height];
+        float side_len = window_properties->device_pixel_ratio * window_properties->height_node_lens[height];
         auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;

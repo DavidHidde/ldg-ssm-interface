@@ -25,6 +25,7 @@ class LDGSSMInterface: public QMainWindow
     RenderView *render_view;
 
     TreeDrawProperties *tree_properties;
+    WindowDrawProperties *window_properties;
     VolumeDrawProperties *volume_properties;
 
     QMenu *file_menu;

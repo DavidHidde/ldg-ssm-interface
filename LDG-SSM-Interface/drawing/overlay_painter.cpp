@@ -3,10 +3,12 @@
 /**
  * @brief OverlayPainter::OverlayPainter
  * @param device
- * @param draw_properties
+ * @param tree_properties
+ * @param window_properties
  */
-OverlayPainter::OverlayPainter(QPaintDevice *device, TreeDrawProperties *draw_properties):
-    draw_properties(draw_properties),
+OverlayPainter::OverlayPainter(QPaintDevice *device, TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties):
+    tree_properties(tree_properties),
+    window_properties(window_properties),
     QPainter(device)
 {
 }
@@ -22,7 +24,7 @@ void OverlayPainter::drawOverlay()
     // Set the pen
     QPen new_pen;
     new_pen.setWidth(1);
-    if (draw_properties->background_color.x() + draw_properties->background_color.y() + draw_properties->background_color.z() < 1.5)
+    if (tree_properties->background_color.x() + tree_properties->background_color.y() + tree_properties->background_color.z() < 1.5)
         new_pen.setBrush(Qt::white);
     else
         new_pen.setBrush(Qt::black);
@@ -32,15 +34,15 @@ void OverlayPainter::drawOverlay()
     double pen_width = new_pen.width();
     double before_pixels = pen_width / 2;
 
-    for (auto &[height, index] : draw_properties->draw_array) {
-        double side_len = draw_properties->height_node_lens[height];
-        auto [num_rows, num_cols] = draw_properties->height_dims[height];
+    for (auto &[height, index] : tree_properties->draw_array) {
+        double side_len = window_properties->height_node_lens[height];
+        auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
         drawRect(
-            std::round(x * (side_len + draw_properties->node_spacing) + before_pixels),
-            std::round(y * (side_len + draw_properties->node_spacing) + before_pixels),
+            std::round(x * (side_len + window_properties->node_spacing) + before_pixels),
+            std::round(y * (side_len + window_properties->node_spacing) + before_pixels),
             side_len - pen_width,
             side_len - pen_width
         );

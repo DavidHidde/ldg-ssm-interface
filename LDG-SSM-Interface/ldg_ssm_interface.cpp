@@ -62,16 +62,22 @@ void LDGSSMInterface::openFile()
     }
 
     // Initialize renderer
-    tree_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
+    window_properties = new WindowDrawProperties();
+    window_properties->scale = 1.;
+    window_properties->node_spacing = 4.; // Standard spacing of 4 pixels
+    window_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
+    window_properties->height_node_lens = QList<double>(tree_properties->tree_max_height + 1, 0.);
+    scroll_area->setWindowDrawProperties(window_properties);
+
     volume_properties = new VolumeDrawProperties();
-    GridController *grid_controller = new GridController(tree_properties, volume_properties);
+    GridController *grid_controller = new GridController(tree_properties, window_properties, volume_properties);
 
     if (tree_properties->draw_type == DrawType::IMAGE) {
-        ImageRenderer *renderer = new ImageRenderer(tree_properties);
-        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+        ImageRenderer *renderer = new ImageRenderer(tree_properties, window_properties);
+        render_view = new RenderView(scroll_area, tree_properties, window_properties, grid_controller, renderer);
     } else {
-        VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, volume_properties);
-        render_view = new RenderView(scroll_area, tree_properties, grid_controller, renderer);
+        VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, window_properties, volume_properties);
+        render_view = new RenderView(scroll_area, tree_properties, window_properties, grid_controller, renderer);
     }
 
     QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);

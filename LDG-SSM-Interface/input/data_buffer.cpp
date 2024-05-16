@@ -116,10 +116,6 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
         invalid_nodes,                                                          // invalid_nodes
         data_map,                                                               // data
         vis_data_config.data_dims,                                              // data_dims
-        4.,                                                                     // node_spacing - 4 pixels by default
-        QList<double>(max_height, 0.),                                          // height_node_lens - set dynamically
-        1.,                                                                     // device_pixel_ratio - set dynamically
-        {},                                                                     // viewport - set dynamically
         {},                                                                     // gl_space_scale_vector - set dynamically
         {},                                                                     // projection - set dynamically
         { 1., 1., 1. }                                                          // background_color - white by default
