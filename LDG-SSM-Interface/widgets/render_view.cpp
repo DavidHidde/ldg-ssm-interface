@@ -136,7 +136,10 @@ void RenderView::mouseMoveEvent(QMouseEvent *event)
  */
 void RenderView::wheelEvent(QWheelEvent *event)
 {
-    grid_controller->handleMouseScrollEvent(event);
+    if (event->modifiers() == Qt::ControlModifier)
+        grid_controller->handleMouseScrollEvent(event);
+    else
+        QOpenGLWidget::wheelEvent(event);
 }
 
 /**
