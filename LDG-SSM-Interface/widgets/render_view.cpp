@@ -84,8 +84,8 @@ void RenderView::paintGL()
 {
     OverlayPainter painter(this, tree_properties, window_properties);
     painter.beginNativePainting();  // Begin OpenGL calls ---
-
     glEnable(GL_SCISSOR_TEST);
+
     auto viewport = window_properties->current_viewport;
     glScissor(
         viewport.left() * window_properties->device_pixel_ratio,

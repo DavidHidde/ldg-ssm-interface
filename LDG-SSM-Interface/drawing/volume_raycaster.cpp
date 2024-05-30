@@ -171,14 +171,14 @@ void VolumeRaycaster::updateBuffers()
         double y = index / num_cols;
 
         // Transformation translates to the origin of the cell and then scales down to the appropriates sizes.
-        // We remove 2 pixels from each side to deal with overdraw of the overlay.
+        // We remove 4 pixels from each side to deal with overdraw of the overlay.
         QMatrix4x4 transformation;
         QVector3D origin{
-            static_cast<float>(x * (side_len + spacing)) + 2,
-            static_cast<float>(y * (side_len + spacing)) + 2,
+            static_cast<float>(x * (side_len + spacing)) + 4,
+            static_cast<float>(y * (side_len + spacing)) + 4,
             0.
         };
-        float factor = (side_len - 4) / base_side_len;
+        float factor = (side_len - 8) / base_side_len;
         transformation.translate(origin);
         transformation.scale(factor, factor);
         transformation_matrices.append(transformation);

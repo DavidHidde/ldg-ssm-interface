@@ -66,7 +66,7 @@ void PannableScrollArea::fitWindow()
 void PannableScrollArea::zoomIn()
 {
     if (widget() != nullptr) {
-        window_properties->scale += SCALE_STEP_SIZE;
+        window_properties->scale *= 1 + SCALE_STEP_SIZE;
         updateViewport();
         resizeWidget();
     }
@@ -78,7 +78,7 @@ void PannableScrollArea::zoomIn()
 void PannableScrollArea::zoomOut()
 {
     if (widget() != nullptr && window_properties->scale > SCALE_STEP_SIZE) {
-        window_properties->scale -= SCALE_STEP_SIZE;
+        window_properties->scale /= 1 + SCALE_STEP_SIZE;
         updateViewport();
         resizeWidget();
     }
