@@ -49,9 +49,6 @@ private slots:
     void on_disparitySpinBox_valueChanged(double value);
     void on_renderTypeSelectBox_currentIndexChanged(int index);
     void on_sampleStepsSpinBox_valueChanged(int value);
-    void on_transferFunctionColor2Button_clicked();
-    void on_transferFunctionColor1Button_clicked();
-    void on_transferFunctionColor0Button_clicked();
     void on_thresholdSlider_valueChanged(int value);
     void on_thresholdSpinBox_valueChanged(double value);
 

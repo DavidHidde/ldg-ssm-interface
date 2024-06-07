@@ -145,32 +145,6 @@ void LDGSSMInterface::initializeUI()
         ui->sampleStepsSpinBox->setValue(volume_properties->sample_steps);
         ui->sampleStepsSpinBox->blockSignals(false);
 
-        // Colors
-        QPixmap pixmap(16, 16);
-        QColor color{
-            static_cast<int>(std::round(volume_properties->color_0.x() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_0.y() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_0.z() * 255.f)),
-        };
-        pixmap.fill(color);
-        ui->color0PreviewLabel->setPixmap(pixmap);
-
-        color = {
-            static_cast<int>(std::round(volume_properties->color_1.x() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_1.y() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_1.z() * 255.f)),
-        };
-        pixmap.fill(color);
-        ui->color1PreviewLabel->setPixmap(pixmap);
-
-        color = {
-            static_cast<int>(std::round(volume_properties->color_2.x() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_2.y() * 255.f)),
-            static_cast<int>(std::round(volume_properties->color_2.z() * 255.f)),
-        };
-        pixmap.fill(color);
-        ui->color2PreviewLabel->setPixmap(pixmap);
-
         // Threshold
         ui->thresholdSlider->blockSignals(true);
         ui->thresholdSpinBox->blockSignals(true);
@@ -287,69 +261,6 @@ void LDGSSMInterface::on_sampleStepsSpinBox_valueChanged(int value)
 {
     volume_properties->sample_steps = value;
     render_view->updateUniforms();
-}
-
-/**
- * @brief LDGSSMInterface::on_transferFunctionColor0Button_clicked
- */
-void LDGSSMInterface::on_transferFunctionColor0Button_clicked()
-{
-    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
-
-    if (color.isValid()) {
-        QPixmap pixmap(16, 16);
-        pixmap.fill(color);
-        ui->color0PreviewLabel->setPixmap(pixmap);
-
-        volume_properties->color_0 = {
-            static_cast<float>(color.red()) / 255.f,
-            static_cast<float>(color.green()) / 255.f,
-            static_cast<float>(color.blue()) / 255.f
-        };
-        render_view->updateUniforms();
-    }
-}
-
-/**
- * @brief LDGSSMInterface::on_transferFunctionColor1Button_clicked
- */
-void LDGSSMInterface::on_transferFunctionColor1Button_clicked()
-{
-    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
-
-    if (color.isValid()) {
-        QPixmap pixmap(16, 16);
-        pixmap.fill(color);
-        ui->color1PreviewLabel->setPixmap(pixmap);
-
-        volume_properties->color_1 = {
-            static_cast<float>(color.red()) / 255.f,
-            static_cast<float>(color.green()) / 255.f,
-            static_cast<float>(color.blue()) / 255.f
-        };
-        render_view->updateUniforms();
-    }
-}
-
-/**
- * @brief LDGSSMInterface::on_transferFunctionColor2Button_clicked
- */
-void LDGSSMInterface::on_transferFunctionColor2Button_clicked()
-{
-    const QColor color = QColorDialog::getColor(Qt::white, this, "Select transfer function color");
-
-    if (color.isValid()) {
-        QPixmap pixmap(16, 16);
-        pixmap.fill(color);
-        ui->color2PreviewLabel->setPixmap(pixmap);
-
-        volume_properties->color_2 = {
-            static_cast<float>(color.red()) / 255.f,
-            static_cast<float>(color.green()) / 255.f,
-            static_cast<float>(color.blue()) / 255.f
-        };
-        render_view->updateUniforms();
-    }
 }
 
 /**
