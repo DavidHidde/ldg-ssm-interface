@@ -27,10 +27,23 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
         util/tree_functions.h util/tree_functions.cpp
         widgets/render_view.h widgets/render_view.cpp
-        util/tree_draw_properties.h
+        drawing/model/tree_draw_properties.h
         drawing/overlay_painter.h drawing/overlay_painter.cpp
         assets.qrc
         util/grid_controller.h util/grid_controller.cpp
+        drawing/renderer.h drawing/renderer.cpp
+        drawing/image_renderer.h drawing/image_renderer.cpp
+        util/atlas_container.h util/atlas_container.cpp
+        input/input_configuration.h input/input_configuration.cpp
+        input/visualization_configuration.h input/visualization_configuration.cpp
+        input/json.h input/json.cpp
+        input/data_buffer.h input/data_buffer.cpp
+        drawing/volume_raycaster.h drawing/volume_raycaster.cpp
+        drawing/model/types.h
+        drawing/model/mesh.h drawing/model/mesh.cpp
+        input/data.h
+        drawing/model/volume_draw_properties.h drawing/model/volume_draw_properties.cpp
+        drawing/model/window_draw_properties.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -56,6 +69,11 @@ target_link_libraries(LDG-SSM-Interface PRIVATE
     Qt::OpenGL
     Qt::OpenGLWidgets
 )
+
+# BZip2 library
+find_package(BZip2 REQUIRED)
+include_directories(${BZIP2_INCLUDE_DIRS})
+target_link_libraries(LDG-SSM-Interface PRIVATE ${BZIP2_LIBRARIES})
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

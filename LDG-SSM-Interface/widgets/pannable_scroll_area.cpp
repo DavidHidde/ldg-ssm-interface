@@ -1,4 +1,5 @@
 #include "pannable_scroll_area.h"
+#include <QScrollBar>
 
 /**
  * @brief PannableScrollArea::PannableScrollArea
@@ -13,14 +14,38 @@ PannableScrollArea::PannableScrollArea(QWidget *parent):
 }
 
 /**
+ * @brief PannableScrollArea::setWindowDrawProperties
+ * @param window_properties
+ */
+void PannableScrollArea::setWindowDrawProperties(WindowDrawProperties *window_properties)
+{
+    this->window_properties = window_properties;
+}
+
+/**
  * @brief PannableScrollArea::PannableScrollArea Scale and square the inner widget.
  */
 void PannableScrollArea::resizeWidget()
 {
     if (widget() != nullptr) {
-        int scaled_max_dim = std::round(scale * static_cast<double>(std::min(width(), height())));
+        int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
+        updateViewport();
         widget()->resize(scaled_max_dim, scaled_max_dim);
     }
+}
+
+/**
+ * @brief PannableScrollArea::updateViewport
+ */
+void PannableScrollArea::updateViewport()
+{
+    int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
+    window_properties->current_viewport = QRect{
+        horizontalScrollBar()->value(),
+        verticalScrollBar()->value(),
+        std::min(width(), scaled_max_dim),
+        std::min(height(), scaled_max_dim)
+    };
 }
 
 /**
@@ -28,8 +53,11 @@ void PannableScrollArea::resizeWidget()
  */
 void PannableScrollArea::fitWindow()
 {
-    scale = 1.;
-    resizeWidget();
+    if (widget() != nullptr) {
+        window_properties->scale = 1.;
+        updateViewport();
+        resizeWidget();
+    }
 }
 
 /**
@@ -37,8 +65,11 @@ void PannableScrollArea::fitWindow()
  */
 void PannableScrollArea::zoomIn()
 {
-    scale += SCALE_STEP_SIZE;
-    resizeWidget();
+    if (widget() != nullptr) {
+        window_properties->scale *= 1 + SCALE_STEP_SIZE;
+        updateViewport();
+        resizeWidget();
+    }
 }
 
 /**
@@ -46,10 +77,25 @@ void PannableScrollArea::zoomIn()
  */
 void PannableScrollArea::zoomOut()
 {
-    if (scale > SCALE_STEP_SIZE) {
-        scale -= SCALE_STEP_SIZE;
+    if (widget() != nullptr && window_properties->scale > SCALE_STEP_SIZE) {
+        window_properties->scale /= 1 + SCALE_STEP_SIZE;
+        updateViewport();
         resizeWidget();
     }
+}
+
+/**
+ * @brief PannableScrollArea::scrollContentsBy
+ * @param dx
+ * @param dy
+ */
+void PannableScrollArea::scrollContentsBy(int dx, int dy)
+{
+    if (widget() != nullptr) {
+        updateViewport();
+        widget()->update();
+    }
+    QScrollArea::scrollContentsBy(dx, dy);
 }
 
 /**
