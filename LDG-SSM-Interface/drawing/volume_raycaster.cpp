@@ -1,18 +1,18 @@
 #include "volume_raycaster.h"
 #include "drawing/model/mesh.h"
-#include "input/data.h"
 
 #include <QOpenGLPixelTransferOptions>
 
 /**
  * @brief VolumeRaycaster::VolumeRaycaster
  * @param tree_properties
+ * @param window_properties
  * @param volume_properties
  */
-VolumeRaycaster::VolumeRaycaster(TreeDrawProperties *tree_properties, VolumeDrawProperties *volume_properties):
+VolumeRaycaster::VolumeRaycaster(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties):
     volume_properties(volume_properties),
     volume_texture(QOpenGLTexture::Target3D),
-    Renderer(tree_properties)
+    Renderer(tree_properties, window_properties)
 {
 }
 
@@ -146,7 +146,7 @@ void VolumeRaycaster::initializeTexture()
 void VolumeRaycaster::updateBuffers()
 {
     // Set the base to-be-instanced shape and indices
-    double base_side_len = tree_properties->height_node_lens[tree_properties->tree_max_height] * tree_properties->device_pixel_ratio;
+    double base_side_len = window_properties->height_node_lens[tree_properties->tree_max_height] * window_properties->device_pixel_ratio;
     auto mesh = createCube(
         QVector3D{ 0., 0., 0. },
         base_side_len,
@@ -162,23 +162,23 @@ void VolumeRaycaster::updateBuffers()
     QList<QMatrix4x4> transformation_matrices;
     QList<QVector3D> viewport_vectors;
     QList<QVector3D> volume_coords;
-    float spacing = tree_properties->node_spacing * tree_properties->device_pixel_ratio;
-    float window_height = tree_properties->viewport.y() * tree_properties->device_pixel_ratio;
+    float spacing = window_properties->node_spacing * window_properties->device_pixel_ratio;
+    float window_height = window_properties->window_size.y() * window_properties->device_pixel_ratio;
     for (auto &[height, index] : tree_properties->draw_array) {
-        float side_len = tree_properties->height_node_lens[height] * tree_properties->device_pixel_ratio;
+        float side_len = window_properties->height_node_lens[height] * window_properties->device_pixel_ratio;
         auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
         // Transformation translates to the origin of the cell and then scales down to the appropriates sizes.
-        // We remove 2 pixels from each side to deal with overdraw of the overlay.
+        // We remove 4 pixels from each side to deal with overdraw of the overlay.
         QMatrix4x4 transformation;
         QVector3D origin{
-            static_cast<float>(x * (side_len + spacing)) + 2,
-            static_cast<float>(y * (side_len + spacing)) + 2,
+            static_cast<float>(x * (side_len + spacing)) + 4,
+            static_cast<float>(y * (side_len + spacing)) + 4,
             0.
         };
-        float factor = (side_len - 4) / base_side_len;
+        float factor = (side_len - 8) / base_side_len;
         transformation.translate(origin);
         transformation.scale(factor, factor);
         transformation_matrices.append(transformation);

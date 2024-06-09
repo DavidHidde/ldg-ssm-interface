@@ -5,19 +5,25 @@
 #include <QPainter>
 #include <QOpenGLVersionFunctionsFactory>
 
+#include <drawing/overlay_painter.h>
+
 /**
  * @brief RenderView::RenderView
  * @param parent
- * @param draw_properties
+ * @param tree_properties
+ * @param window_properties
  * @param grid_controller
+ * @param renderer
  */
 RenderView::RenderView(
     QWidget *parent,
-    TreeDrawProperties *draw_properties,
+    TreeDrawProperties *tree_properties,
+    WindowDrawProperties *window_properties,
     GridController *grid_controller,
     Renderer *renderer
 ):
-    draw_properties(draw_properties),
+    tree_properties(tree_properties),
+    window_properties(window_properties),
     grid_controller(grid_controller),
     renderer(renderer),
     QOpenGLWidget(parent)
@@ -38,7 +44,8 @@ RenderView::~RenderView()
 
     delete renderer;
     delete grid_controller;
-    delete draw_properties;
+    delete tree_properties;
+    delete window_properties;
 }
 
 /**
@@ -75,9 +82,19 @@ void RenderView::initializeGL()
  */
 void RenderView::paintGL()
 {
-    OverlayPainter painter(this, draw_properties);
+    OverlayPainter painter(this, tree_properties, window_properties);
     painter.beginNativePainting();  // Begin OpenGL calls ---
-    renderer->render();
+    glEnable(GL_SCISSOR_TEST);
+
+    auto viewport = window_properties->current_viewport;
+    glScissor(
+        viewport.left() * window_properties->device_pixel_ratio,
+        (window_properties->window_size.y() - viewport.top() - viewport.height()) * window_properties->device_pixel_ratio,  // Translate top-left origin to bot-left
+        viewport.width() * window_properties->device_pixel_ratio,
+        viewport.height() * window_properties->device_pixel_ratio
+    );
+
+    renderer->render(); // Render content
     painter.endNativePainting();    // End OpenGL calls ---
 
     // Draw the grid overlay
@@ -92,14 +109,14 @@ void RenderView::paintGL()
 void RenderView::resizeGL(int width, int height)
 {
     // Update drawing properties.
-    float opengl_width = width * draw_properties->device_pixel_ratio;
-    float opengl_height = height * draw_properties->device_pixel_ratio;
+    float opengl_width = width * window_properties->device_pixel_ratio;
+    float opengl_height = height * window_properties->device_pixel_ratio;
     double side_len = width - 2; // Subtract 2 pixels to make sure we stay within the borders
-    for (int curr_height = draw_properties->tree_max_height; curr_height >= 0; --curr_height) {
-        draw_properties->height_node_lens[curr_height] = side_len;
-        side_len = (side_len - draw_properties->node_spacing) / 2.;
+    for (int curr_height = tree_properties->tree_max_height; curr_height >= 0; --curr_height) {
+        window_properties->height_node_lens[curr_height] = side_len;
+        side_len = (side_len - window_properties->node_spacing) / 2.;
     }
-    draw_properties->gl_space_scale_vector = QVector3D{
+    tree_properties->gl_space_scale_vector = QVector3D{
         2.f / opengl_width,
         2.f / opengl_height,
         1.f
@@ -107,7 +124,7 @@ void RenderView::resizeGL(int width, int height)
 
     // Update renderer
     glViewport(0, 0, opengl_width, opengl_height);
-    draw_properties->viewport = { static_cast<float>(width), static_cast<float>(height) };
+    window_properties->window_size = { static_cast<float>(width), static_cast<float>(height) };
     renderer->updateUniforms();
     renderer->updateBuffers();
 }
@@ -136,7 +153,10 @@ void RenderView::mouseMoveEvent(QMouseEvent *event)
  */
 void RenderView::wheelEvent(QWheelEvent *event)
 {
-    grid_controller->handleMouseScrollEvent(event);
+    if (event->modifiers() == Qt::ControlModifier)
+        grid_controller->handleMouseScrollEvent(event);
+    else
+        QOpenGLWidget::wheelEvent(event);
 }
 
 /**
@@ -179,7 +199,7 @@ void RenderView::resetView()
  */
 void RenderView::screenChanged()
 {
-    draw_properties->device_pixel_ratio = devicePixelRatio();
+    window_properties->device_pixel_ratio = devicePixelRatio();
     resizeGL(width(), height());
     update();
 }

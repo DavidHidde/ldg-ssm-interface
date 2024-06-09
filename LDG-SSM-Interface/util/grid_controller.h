@@ -8,6 +8,7 @@
 #include <QPoint>
 
 #include <drawing/model/volume_draw_properties.h>
+#include <drawing/model/window_draw_properties.h>
 
 
 /**
@@ -18,6 +19,7 @@ class GridController: public QObject
     Q_OBJECT;
 
     TreeDrawProperties *tree_properties;
+    WindowDrawProperties *window_properties;
     VolumeDrawProperties *volume_properties;
 
     bool is_dragging = false;
@@ -31,7 +33,7 @@ class GridController: public QObject
     std::pair<int, int> resolveGridPosition(QPointF &position);
 
 public:
-    GridController(TreeDrawProperties *draw_properties, VolumeDrawProperties *volume_properties);
+    GridController(TreeDrawProperties *draw_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties);
 
 public slots:
     void handleMouseClick(QMouseEvent *event);

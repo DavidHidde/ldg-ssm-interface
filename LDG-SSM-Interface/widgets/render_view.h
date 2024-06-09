@@ -6,7 +6,6 @@
 #include <QOpenGLWidget>
 
 #include "drawing/renderer.h"
-#include "drawing/overlay_painter.h"
 #include "drawing/model/tree_draw_properties.h"
 #include "util/grid_controller.h"
 
@@ -17,7 +16,8 @@ class RenderView : public QOpenGLWidget, protected QOpenGLFunctions_4_1_Core
 {
     Q_OBJECT;
 
-    TreeDrawProperties *draw_properties;
+    TreeDrawProperties *tree_properties;
+    WindowDrawProperties *window_properties;
 
     GridController *grid_controller;
     Renderer *renderer;
@@ -27,6 +27,7 @@ public:
     RenderView(
         QWidget *parent,
         TreeDrawProperties *draw_properties,
+        WindowDrawProperties *window_properties,
         GridController *grid_controller,
         Renderer *renderer
     );

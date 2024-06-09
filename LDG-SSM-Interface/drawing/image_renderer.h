@@ -11,7 +11,7 @@
  * @brief The ImageRenderer class Render class for rendering 2D image grids in OpenGL.
  */
 class ImageRenderer : public Renderer
-{
+{    
     QOpenGLTexture texture_array;
     QOpenGLShaderProgram shader;
 
@@ -28,7 +28,7 @@ class ImageRenderer : public Renderer
     void initializeTextures();
 
 public:
-    ImageRenderer(TreeDrawProperties *draw_properties);
+    ImageRenderer(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties);
     ~ImageRenderer() override;
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;

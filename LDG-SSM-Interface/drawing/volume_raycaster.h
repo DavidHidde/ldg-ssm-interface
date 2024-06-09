@@ -33,7 +33,7 @@ class VolumeRaycaster : public Renderer
     void initializeTexture();
 
 public:
-    VolumeRaycaster(TreeDrawProperties *draw_properties, VolumeDrawProperties *volume_properties);
+    VolumeRaycaster(TreeDrawProperties *draw_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties);
     ~VolumeRaycaster() override;
 
     void intialize(QOpenGLFunctions_4_1_Core *gl) override;

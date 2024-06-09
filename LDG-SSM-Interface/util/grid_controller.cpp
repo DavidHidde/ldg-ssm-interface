@@ -5,9 +5,12 @@
 /**
  * @brief GridController::GridController
  * @param tree_properties
+ * @param window_properties
+ * @param volume_properties
  */
-GridController::GridController(TreeDrawProperties *tree_properties, VolumeDrawProperties *volume_properties):
+GridController::GridController(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties):
     tree_properties(tree_properties),
+    window_properties(window_properties),
     volume_properties(volume_properties)
 {
     reset();
@@ -63,9 +66,9 @@ void GridController::mergeNode(size_t height, size_t index)
  */
 std::pair<int, int> GridController::resolveGridPosition(QPointF &position)
 {
-    auto side_len = tree_properties->height_node_lens[0] + tree_properties->node_spacing;
-    size_t col = std::max(0., std::floor((position.x() - 1 + tree_properties->node_spacing / 2.) / side_len));
-    size_t row = std::max(0., std::floor((position.y() - 1 + tree_properties->node_spacing / 2.) / side_len));
+    auto side_len = window_properties->height_node_lens[0] + window_properties->node_spacing;
+    size_t col = std::max(0., std::floor((position.x() - 1 + window_properties->node_spacing / 2.) / side_len));
+    size_t row = std::max(0., std::floor((position.y() - 1 + window_properties->node_spacing / 2.) / side_len));
 
     int found_index = -1;
     int found_height = -1;
@@ -123,8 +126,8 @@ void GridController::handleMouseMoveEvent(QMouseEvent* event)
     }
 
     // Normalize coordinates
-    float x_ratio = event->position().x() / tree_properties->viewport.x();
-    float y_ratio = event->position().y() / tree_properties->viewport.y();
+    float x_ratio = event->position().x() / window_properties->window_size.x();
+    float y_ratio = event->position().y() / window_properties->window_size.y();
 
     QVector3D mouse_pos = QVector3D(
         (1. - x_ratio) * -1. + x_ratio * 1.,

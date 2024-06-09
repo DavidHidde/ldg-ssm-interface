@@ -3,9 +3,11 @@
 /**
  * @brief Renderer::Renderer
  * @param tree_properties
+ * @param window_properties
  */
-Renderer::Renderer(TreeDrawProperties *tree_properties):
-    tree_properties(tree_properties)
+Renderer::Renderer(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties):
+    tree_properties(tree_properties),
+    window_properties(window_properties)
 {
 }
 
