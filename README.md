@@ -27,7 +27,7 @@ The interface uses a JSON configuration file for parsing datasets. These files a
 * A visualization configuration and data buffer (containing images or volumes)
 * An assignment file, mapping the members of the visualization buffer to the grid itself
 
-The interface has 2 visualization modes: Images and 3D volumes. The distinction between these two modes is based on the indicated data size, with dataset member with a third dimension greater than 4 being interpreted as volumes.
+The interface has 2 visualization modes: Images and 3D volumes. The distinction between these two modes is based on the indicated data size, with dataset member with a third dimension greater than 4 being interpreted as volumes. For volumes, a simple hardcoded transfer function is used. This function should be adjusted based on the dataset used.
 
 ## Controls
 

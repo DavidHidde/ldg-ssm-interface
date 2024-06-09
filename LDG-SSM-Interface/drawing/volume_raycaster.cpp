@@ -248,15 +248,6 @@ void VolumeRaycaster::updateUniforms()
     background_color_uniform = shader->uniformLocation("background_color");
     gl->glUniform3f(background_color_uniform, tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z());
 
-    color_0_uniform = shader->uniformLocation("color_0");
-    gl->glUniform3f(color_0_uniform, volume_properties->color_0.x(), volume_properties->color_0.y(), volume_properties->color_0.z());
-
-    color_1_uniform = shader->uniformLocation("color_1");
-    gl->glUniform3f(color_1_uniform, volume_properties->color_1.x(), volume_properties->color_1.y(), volume_properties->color_1.z());
-
-    color_2_uniform = shader->uniformLocation("color_2");
-    gl->glUniform3f(color_2_uniform, volume_properties->color_2.x(), volume_properties->color_2.y(), volume_properties->color_2.z());
-
     if (volume_properties->render_type == VolumeRenderingType::ISOSURFACE) {
         threshold_uniform = shader->uniformLocation("threshold");
         gl->glUniform1f(threshold_uniform, volume_properties->threshold);

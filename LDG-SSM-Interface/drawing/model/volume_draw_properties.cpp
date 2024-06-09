@@ -5,10 +5,7 @@
  */
 VolumeDrawProperties::VolumeDrawProperties():
     render_type(VolumeRenderingType::ACCUMULATE),
-    sample_steps(100),
-    color_0({ 0., 0., 1. }),
-    color_1({ 1., 1., 1. }),
-    color_2({ 1., 0., 0. })
+    sample_steps(100)
 {
     camera_view_transformation.setToIdentity();
 }
