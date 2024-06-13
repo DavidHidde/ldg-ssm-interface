@@ -28,7 +28,7 @@ class GridController: public QObject
     QVector3D translation;
 
     void splitNode(size_t height, size_t index);
-    void mergeNode(size_t height, size_t index);
+    void mergeNode(size_t height, size_t index, QSet<QPair<size_t, size_t>> *nodes_merged);
 
     std::pair<int, int> resolveGridPosition(QPointF &position);
 
@@ -41,6 +41,7 @@ public slots:
     void handleMouseScrollEvent(QWheelEvent *event);
 
     void selectHeight(size_t height);
+    void selectDisparity(double disparity);
 
     void reset();
     void updateTransformations();

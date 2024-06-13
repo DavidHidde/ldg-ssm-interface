@@ -56,7 +56,8 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 signals:
-    void selectionChanged(size_t height);
+    void heightSelected(size_t height);
+    void disparitySelected(double disparity);
 
 };
 #endif // LDGSSMINTERFACE_H

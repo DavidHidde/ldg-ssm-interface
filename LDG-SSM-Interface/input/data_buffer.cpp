@@ -89,7 +89,8 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
     }
 
     // Combine everything into a single data map
-    QMap<QPair<size_t, size_t>, QPair<QList<unsigned char>, double>> *data_map = new QMap<QPair<size_t, size_t>, QPair<QList<unsigned char>, double>>;
+    QMap<QPair<size_t, size_t>, QList<unsigned char>> *data_map = new QMap<QPair<size_t, size_t>, QList<unsigned char>>;
+    QMap<QPair<size_t, size_t>, double> disparity_map;
     QSet<QPair<size_t, size_t>> invalid_nodes;
     for (size_t height = 0; height < max_height; ++height) {
         auto [start, end] = start_ends[height];
@@ -97,10 +98,8 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
             int assigned_idx = assignment_buffer[start + idx];
             if (assigned_idx >= 0) {
                 unsigned char *start_ptr = data_buffer.data() + data_elem_size * assigned_idx;
-                (*data_map)[{ height, idx }] = {
-                    QList<unsigned char>(start_ptr, start_ptr + data_elem_size),
-                    disparity_buffer[assigned_idx]
-                };
+                disparity_map[{ height, idx }] = disparity_buffer[assigned_idx];
+                (*data_map)[{ height, idx }] = QList<unsigned char>(start_ptr, start_ptr + data_elem_size);
             } else {
                 invalid_nodes.insert({ height, idx });
             }
@@ -115,6 +114,7 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
         { { max_height - 1, 0 } },                                              // draw_array - contains the root by default
         invalid_nodes,                                                          // invalid_nodes
         data_map,                                                               // data
+        disparity_map,                                                          // disparities
         vis_data_config.data_dims,                                              // data_dims
         {},                                                                     // gl_space_scale_vector - set dynamically
         {},                                                                     // projection - set dynamically

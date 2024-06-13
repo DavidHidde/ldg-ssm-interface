@@ -80,7 +80,8 @@ void LDGSSMInterface::openFile()
         render_view = new RenderView(scroll_area, tree_properties, window_properties, grid_controller, renderer);
     }
 
-    QObject::connect(this, &LDGSSMInterface::selectionChanged, grid_controller, &GridController::selectHeight);
+    QObject::connect(this, &LDGSSMInterface::heightSelected, grid_controller, &GridController::selectHeight);
+    QObject::connect(this, &LDGSSMInterface::disparitySelected, grid_controller, &GridController::selectDisparity);
     QObject::connect(window()->windowHandle(), &QWindow::screenChanged, render_view, &RenderView::screenChanged);
 
     initializeUI();
@@ -179,7 +180,7 @@ void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
 {
     auto key_pressed = event->key();
     if (key_pressed >= Qt::Key_0 && key_pressed <= Qt::Key_9) {
-        emit selectionChanged(key_pressed - Qt::Key_0);
+        emit heightSelected(key_pressed - Qt::Key_0);
     }
 }
 
@@ -189,7 +190,7 @@ void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
  */
 void LDGSSMInterface::on_heightSpinBox_valueChanged(int value)
 {
-    emit selectionChanged(value);
+    emit heightSelected(value);
 }
 
 /**
@@ -222,7 +223,7 @@ void LDGSSMInterface::on_disparitySlider_valueChanged(int value)
     ui->disparitySpinBox->blockSignals(true);
     ui->disparitySpinBox->setValue(static_cast<float>(value) / 100.);
     ui->disparitySpinBox->blockSignals(false);
-    // TODO: emit signal
+    emit disparitySelected(static_cast<float>(value) / 100.);
 }
 
 /**
@@ -234,7 +235,7 @@ void LDGSSMInterface::on_disparitySpinBox_valueChanged(double value)
     ui->disparitySlider->blockSignals(true);
     ui->disparitySlider->setValue(value * 100);
     ui->disparitySlider->blockSignals(false);
-    // TODO: emit signal
+    emit disparitySelected(value);
 }
 
 /**

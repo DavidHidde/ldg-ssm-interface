@@ -63,9 +63,8 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
 
     // Fill mapping and atlasses
     size_t count = 0;
-    for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
+    for (auto [key, raw_image] : draw_properties->data->asKeyValueRange()) {
         auto &[height, index] = key;
-        auto &[raw_image, _] = data;
         QImage image{ raw_image.data(), static_cast<int>(img_width), static_cast<int>(img_height), QImage::Format_RGBA8888 };
         int atlas_idx = count / images_per_atlas;
         int canvas_idx = count % images_per_atlas;
@@ -132,9 +131,7 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
 
     // Build the atlas by copying data from the volume buffers to the container buffer.
     size_t count = 0;
-    for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
-        auto &[volume_data, _] = data;
-
+    for (auto [key, volume_data] : draw_properties->data->asKeyValueRange()) {
         size_t atlas_x = count % volumes_per_atlas_dim;
         size_t atlas_y = (count % volumes_per_atlas_slice) / volumes_per_atlas_dim;
         size_t atlas_z = count / volumes_per_atlas_slice;
