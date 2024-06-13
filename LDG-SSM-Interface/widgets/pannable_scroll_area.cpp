@@ -27,7 +27,7 @@ void PannableScrollArea::setWindowDrawProperties(WindowDrawProperties *window_pr
  */
 void PannableScrollArea::resizeWidget()
 {
-    if (widget() != nullptr) {
+    if (isReady()) {
         int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
         updateViewport();
         widget()->resize(scaled_max_dim, scaled_max_dim);
@@ -39,13 +39,24 @@ void PannableScrollArea::resizeWidget()
  */
 void PannableScrollArea::updateViewport()
 {
-    int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
-    window_properties->current_viewport = QRect{
-        horizontalScrollBar()->value(),
-        verticalScrollBar()->value(),
-        std::min(width(), scaled_max_dim),
-        std::min(height(), scaled_max_dim)
-    };
+    if (isReady()) {
+        int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
+        window_properties->current_viewport = QRect{
+            horizontalScrollBar()->value(),
+            verticalScrollBar()->value(),
+            std::min(width(), scaled_max_dim),
+            std::min(height(), scaled_max_dim)
+        };
+    }
+}
+
+/**
+ * @brief PannableScrollArea::isReady
+ * @return
+ */
+bool PannableScrollArea::isReady()
+{
+    return widget() != nullptr && window_properties != nullptr;
 }
 
 /**
@@ -53,7 +64,7 @@ void PannableScrollArea::updateViewport()
  */
 void PannableScrollArea::fitWindow()
 {
-    if (widget() != nullptr) {
+    if (isReady()) {
         window_properties->scale = 1.;
         updateViewport();
         resizeWidget();
@@ -65,7 +76,7 @@ void PannableScrollArea::fitWindow()
  */
 void PannableScrollArea::zoomIn()
 {
-    if (widget() != nullptr) {
+    if (isReady()) {
         window_properties->scale *= 1 + SCALE_STEP_SIZE;
         updateViewport();
         resizeWidget();
@@ -77,7 +88,7 @@ void PannableScrollArea::zoomIn()
  */
 void PannableScrollArea::zoomOut()
 {
-    if (widget() != nullptr && window_properties->scale > SCALE_STEP_SIZE) {
+    if (isReady() && window_properties->scale > SCALE_STEP_SIZE) {
         window_properties->scale /= 1 + SCALE_STEP_SIZE;
         updateViewport();
         resizeWidget();
@@ -91,7 +102,7 @@ void PannableScrollArea::zoomOut()
  */
 void PannableScrollArea::scrollContentsBy(int dx, int dy)
 {
-    if (widget() != nullptr) {
+    if (isReady()) {
         updateViewport();
         widget()->update();
     }

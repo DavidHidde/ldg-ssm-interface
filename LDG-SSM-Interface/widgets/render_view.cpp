@@ -41,11 +41,7 @@ RenderView::RenderView(
 RenderView::~RenderView()
 {
     debug_logger.stopLogging();
-
     delete renderer;
-    delete grid_controller;
-    delete tree_properties;
-    delete window_properties;
 }
 
 /**

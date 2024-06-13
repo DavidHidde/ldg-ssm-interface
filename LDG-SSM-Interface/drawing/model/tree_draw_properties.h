@@ -12,8 +12,8 @@
 struct TreeDrawProperties
 {
     // Tree dimensions
-    const size_t tree_max_height;
-    const QList<std::pair<size_t, size_t>> height_dims;
+    size_t tree_max_height;
+    QList<std::pair<size_t, size_t>> height_dims;
 
     // General draw info
     DrawType draw_type;
@@ -29,6 +29,8 @@ struct TreeDrawProperties
     QVector3D gl_space_scale_vector;                            // Scaling factor for scaling from sceen space to OpenGL world space.
     QMatrix4x4 projection;
     QVector3D background_color;
+
+    TreeDrawProperties();
 };
 
 #endif // TREEDRAWPROPERTIES_H

@@ -30,7 +30,6 @@ VolumeRaycaster::~VolumeRaycaster()
 
     volume_texture.destroy();
     qDeleteAll(shaders);
-    delete volume_properties;
 }
 
 /**

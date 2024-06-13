@@ -23,14 +23,14 @@ QString fixPath(QString file_path, QString config_dir)
 /**
  * @brief readInput
  * @param visualization_configuration_path
- * @return The general draw properties or a nullptr if something went wrong.
+ * @return True if the operation succeeded, else false
  */
-TreeDrawProperties *readInput(QString visualization_configuration_path)
+bool readInput(QString visualization_configuration_path, TreeDrawProperties &tree_properties)
 {
     // Load all config files
     VisualizationConfiguration config;
     if (!config.fromJSONFile(visualization_configuration_path))
-        return nullptr;
+        return false;
 
     QString config_dir_path = (QFileInfo(visualization_configuration_path)).path();
     InputConfiguration disparity_config;
@@ -39,11 +39,11 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
         !disparity_config.fromJSONFile(fixPath(config.disparity_config_path, config_dir_path)) ||
         !vis_data_config.fromJSONFile(fixPath(config.visualization_config_path, config_dir_path))
     )
-        return nullptr;
+        return false;
 
     if (vis_data_config.grid_dims != disparity_config.grid_dims) {
         qDebug() << "Grid dims of configs are not equal!";
-        return nullptr;
+        return false;
     }
 
     // Load the assignment
@@ -66,7 +66,7 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
     if (readFileIntoBuffer(assignment_buffer, data_path) != idx) {
         qDebug() << "Sizes:" << assignment_buffer.size() << idx;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
-        return nullptr;
+        return false;
     }
 
     // Load visualization data
@@ -76,7 +76,7 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
     if (readFileIntoBuffer(data_buffer, data_path) != vis_data_config.num_elements * data_elem_size) {
         qDebug() << "Sizes:" << data_buffer.size() << vis_data_config.num_elements * data_elem_size;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
-        return nullptr;
+        return false;
     }
 
     // Load disparities
@@ -85,7 +85,7 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
     if (readFileIntoBuffer(disparity_buffer, data_path) != disparity_config.num_elements) {
         qDebug() << "Sizes:" << disparity_buffer.size() << disparity_config.num_elements;
         qDebug() << "Unable to load data from file \"" << data_path << "\"\n";
-        return nullptr;
+        return false;
     }
 
     // Combine everything into a single data map
@@ -106,18 +106,15 @@ TreeDrawProperties *readInput(QString visualization_configuration_path)
         }
     }
 
-    // Set up and return properties. We only set the properties that we can set now, as some need to be determined during runtime.
-    return new TreeDrawProperties{
-        max_height - 1,                                                         // tree_max_height
-        height_dims,                                                            // height_dims
-        vis_data_config.data_dims[2] > 4 ? DrawType::VOLUME : DrawType::IMAGE,  // draw_type
-        { { max_height - 1, 0 } },                                              // draw_array - contains the root by default
-        invalid_nodes,                                                          // invalid_nodes
-        data_map,                                                               // data
-        disparity_map,                                                          // disparities
-        vis_data_config.data_dims,                                              // data_dims
-        {},                                                                     // gl_space_scale_vector - set dynamically
-        {},                                                                     // projection - set dynamically
-        { 1., 1., 1. }                                                          // background_color - white by default
-    };
+    // Set loaded properties. Some other properties will be set dynamically later as they depend on the screen size.
+    tree_properties.tree_max_height = max_height - 1;
+    tree_properties.height_dims = height_dims;
+    tree_properties.draw_type = vis_data_config.data_dims[2] > 4 ? DrawType::VOLUME : DrawType::IMAGE;
+    tree_properties.draw_array = { { max_height - 1, 0 } };
+    tree_properties.invalid_nodes = invalid_nodes;
+    tree_properties.data = data_map;
+    tree_properties.disparities = disparity_map;
+    tree_properties.data_dims = vis_data_config.data_dims;
+
+    return true;
 }

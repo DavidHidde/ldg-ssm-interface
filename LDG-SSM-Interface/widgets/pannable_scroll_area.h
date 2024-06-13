@@ -19,6 +19,7 @@ class PannableScrollArea : public QScrollArea
 
     void resizeWidget();
     void updateViewport();
+    bool isReady();
 
 public:
     PannableScrollArea(QWidget *parent = nullptr);

@@ -6,6 +6,6 @@
 #include <QMap>
 #include <QString>
 
-TreeDrawProperties *readInput(QString visualization_configuration_path);
+bool readInput(QString visualization_configuration_path, TreeDrawProperties &tree_properties);
 
 #endif // DATA_BUFFER_H
