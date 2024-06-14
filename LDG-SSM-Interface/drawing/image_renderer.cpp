@@ -24,6 +24,12 @@ ImageRenderer::~ImageRenderer()
     gl->glDeleteBuffers(1, &texindex_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
+    vertex_array_object = 0;
+    vertex_buffer = 0;
+    texcoord_buffer = 0;
+    texindex_buffer = 0;
+    index_buffer = 0;
+
     texture_array.destroy();
 }
 
@@ -194,9 +200,6 @@ void ImageRenderer::render()
 {
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
-
-    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader.bind();
     texture_array.bind();

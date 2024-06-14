@@ -20,6 +20,7 @@ class LDGSSMInterface: public QMainWindow
     Q_OBJECT
 
     Ui::LDGSSMInterface *ui;
+    bool is_ready = false;
 
     // Model
     TreeDrawProperties *tree_properties = nullptr;
@@ -39,7 +40,6 @@ class LDGSSMInterface: public QMainWindow
     void initializeMenus();
     void initializeUI();
     void initializeModelController();
-    bool isReady();
 
 public:
     LDGSSMInterface(QWidget *parent = nullptr);    
@@ -61,10 +61,6 @@ private slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
-
-signals:
-    void heightSelected(size_t height);
-    void disparitySelected(double disparity);
 
 };
 #endif // LDGSSMINTERFACE_H

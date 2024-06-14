@@ -4,10 +4,13 @@
 #include <QOpenGLWidget>
 #include <QScrollArea>
 
+#include <drawing/model/tree_draw_properties.h>
 #include <drawing/model/window_draw_properties.h>
 
+#include <util/grid_controller.h>
+
 /**
- * A scroll area that is able to zoom and pan on the nested content.
+ * A scroll area that is able to zoom and interact with the underlying content. This acts as a controller for mouse interactions.
  *
  * @brief The PannableScrollArea class
  */
@@ -16,6 +19,8 @@ class PannableScrollArea : public QScrollArea
     const double SCALE_STEP_SIZE = 0.1;
 
     WindowDrawProperties *window_properties;
+    TreeDrawProperties *tree_properties;
+    GridController *grid_controller;
 
     void resizeWidget();
     void updateViewport();
@@ -24,7 +29,15 @@ class PannableScrollArea : public QScrollArea
 public:
     PannableScrollArea(QWidget *parent = nullptr);
 
-    void setWindowDrawProperties(WindowDrawProperties *window_properties);
+    void intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, GridController *grid_controller);
+    void updateWindowProperties();
+
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
 public slots:
     void fitWindow();
@@ -32,11 +45,7 @@ public slots:
     void zoomOut();
     void scrollContentsBy(int dx, int dy) override;
 
-signals:
-    void viewPortChanged(QRect viewport);
-
-protected:
-    void resizeEvent(QResizeEvent *event) override;
+    void screenChanged();
 };
 
 #endif // PANNABLESCROLLAREA_H

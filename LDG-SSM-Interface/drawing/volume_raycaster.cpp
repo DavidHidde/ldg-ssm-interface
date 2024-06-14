@@ -28,6 +28,13 @@ VolumeRaycaster::~VolumeRaycaster()
     gl->glDeleteBuffers(1, &texture_coords_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
+    vertex_array_object = 0;
+    vertex_buffer = 0;
+    transformation_buffer = 0;
+    viewport_buffer = 0;
+    texture_coords_buffer = 0;
+    index_buffer = 0;
+
     volume_texture.destroy();
     qDeleteAll(shaders);
 }
@@ -262,9 +269,6 @@ void VolumeRaycaster::render()
 {   
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
-
-    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shaders[volume_properties->render_type]->bind();
     volume_texture.bind();

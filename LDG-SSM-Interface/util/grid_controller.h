@@ -27,13 +27,13 @@ class GridController: public QObject
     QQuaternion rotation;
     QVector3D translation;
 
-    void splitNode(size_t height, size_t index);
-    void mergeNode(size_t height, size_t index, QSet<QPair<size_t, size_t>> *nodes_merged);
+public:
+    GridController(TreeDrawProperties *draw_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties);
 
     std::pair<int, int> resolveGridPosition(QPointF &position);
 
-public:
-    GridController(TreeDrawProperties *draw_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties);
+    void splitNode(size_t height, size_t index);
+    void mergeNode(size_t height, size_t index, QSet<QPair<size_t, size_t>> *nodes_merged);
 
 public slots:
     void handleMouseClick(QMouseEvent *event);

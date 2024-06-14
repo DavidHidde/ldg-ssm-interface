@@ -112,9 +112,11 @@ bool readInput(QString visualization_configuration_path, TreeDrawProperties &tre
     tree_properties.draw_type = vis_data_config.data_dims[2] > 4 ? DrawType::VOLUME : DrawType::IMAGE;
     tree_properties.draw_array = { { max_height - 1, 0 } };
     tree_properties.invalid_nodes = invalid_nodes;
-    tree_properties.data = data_map;
     tree_properties.disparities = disparity_map;
     tree_properties.data_dims = vis_data_config.data_dims;
+
+    delete tree_properties.data;
+    tree_properties.data = data_map;
 
     return true;
 }

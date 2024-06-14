@@ -94,6 +94,7 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
 
     // Not needed anymore
     delete draw_properties->data;
+    draw_properties->data = nullptr;
 
     return container;
 }
@@ -160,6 +161,7 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
 
     // Not needed anymore
     delete draw_properties->data;
+    draw_properties->data = nullptr;
 
     return container;
 }

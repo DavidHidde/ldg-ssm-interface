@@ -27,9 +27,6 @@ LDGSSMInterface::LDGSSMInterface(QWidget *parent):
     initializeMenus();
     initializeModelController();
     initializeUI();
-
-    // Begin by asking to open a file
-    openFile();
 }
 
 /**
@@ -52,15 +49,6 @@ LDGSSMInterface::~LDGSSMInterface()
  */
 void LDGSSMInterface::openFile()
 {
-    // Remove current renderer if it exists
-    if (render_view != nullptr) {
-        auto render_widget = scroll_area->takeWidget();
-        render_view->deleteLater();
-        render_view = nullptr;
-
-        tree_properties->draw_array.clear();
-    }
-
     // Get the file
     QString file_name = QFileDialog::getOpenFileName(this, tr("Select config"), "", tr("Config Files (*.json)"));
     if (!readInput(file_name, *tree_properties)) {
@@ -69,24 +57,22 @@ void LDGSSMInterface::openFile()
         msg_box.exec();
         return;
     }
+    is_ready = render_view != nullptr && scroll_area != nullptr && grid_controller != nullptr && tree_properties != nullptr && window_properties != nullptr && volume_properties != nullptr;
+
 
     // Initialize renderer
-    window_properties->height_node_lens = QList<double>(tree_properties->tree_max_height + 1, 0.);
-
+    scroll_area->updateWindowProperties();
+    render_view->deleteRenderer();
     if (tree_properties->draw_type == DrawType::IMAGE) {
-        ImageRenderer *renderer = new ImageRenderer(tree_properties, window_properties);
-        render_view = new RenderView(scroll_area, tree_properties, window_properties, grid_controller, renderer);
+        render_view->setRenderer(new ImageRenderer(tree_properties, window_properties));
     } else {
-        VolumeRaycaster *renderer = new VolumeRaycaster(tree_properties, window_properties, volume_properties);
-        render_view = new RenderView(scroll_area, tree_properties, window_properties, grid_controller, renderer);
+        render_view->setRenderer(new VolumeRaycaster(tree_properties, window_properties, volume_properties));
     }
 
-    QObject::connect(this, &LDGSSMInterface::heightSelected, grid_controller, &GridController::selectHeight);
-    QObject::connect(this, &LDGSSMInterface::disparitySelected, grid_controller, &GridController::selectDisparity);
-    QObject::connect(window()->windowHandle(), &QWindow::screenChanged, render_view, &RenderView::screenChanged);
+    QObject::connect(grid_controller, &GridController::gridChanged, render_view, &RenderView::updateBuffers);
+    QObject::connect(grid_controller, &GridController::transformationChanged, render_view, &RenderView::updateUniforms);
 
     initializeUI();
-    scroll_area->setWidget(render_view);
 }
 
 /**
@@ -176,17 +162,13 @@ void LDGSSMInterface::initializeModelController()
     window_properties->scale = 1.;
     window_properties->node_spacing = 4.; // Standard spacing of 4 pixels
     window_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
-    scroll_area->setWindowDrawProperties(window_properties);
 
     grid_controller = new GridController(tree_properties, window_properties, volume_properties);
-}
+    render_view = new RenderView(scroll_area, tree_properties, window_properties);
 
-/**
- * @brief LDGSSMInterface::isReady Check if everything is set up correctly to view an LDG grid.
- */
-bool LDGSSMInterface::isReady()
-{
-    return render_view != nullptr && scroll_area != nullptr && grid_controller != nullptr && tree_properties != nullptr && window_properties != nullptr && volume_properties != nullptr;
+    scroll_area->intialize(window_properties, tree_properties, grid_controller);
+    scroll_area->setWidget(render_view);
+    QObject::connect(window()->windowHandle(), &QWindow::screenChanged, scroll_area, &PannableScrollArea::screenChanged);
 }
 
 /**
@@ -194,8 +176,8 @@ bool LDGSSMInterface::isReady()
  */
 void LDGSSMInterface::resetView()
 {
-    if (isReady()) {
-        render_view->resetView();
+    if (is_ready) {
+        grid_controller->reset();
         scroll_area->fitWindow();
     }
 }
@@ -207,8 +189,8 @@ void LDGSSMInterface::resetView()
 void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
 {
     auto key_pressed = event->key();
-    if (isReady() && key_pressed >= Qt::Key_0 && key_pressed <= Qt::Key_9) {
-        emit heightSelected(key_pressed - Qt::Key_0);
+    if (is_ready && key_pressed >= Qt::Key_0 && key_pressed <= Qt::Key_9) {
+        grid_controller->selectHeight(key_pressed - Qt::Key_0);
     }
 }
 
@@ -218,7 +200,8 @@ void LDGSSMInterface::keyPressEvent(QKeyEvent *event)
  */
 void LDGSSMInterface::on_heightSpinBox_valueChanged(int value)
 {
-    emit heightSelected(value);
+    if (is_ready)
+        grid_controller->selectHeight(value);
 }
 
 /**
@@ -228,7 +211,7 @@ void LDGSSMInterface::on_backgroundColorSelectButton_clicked()
 {
     const QColor color = QColorDialog::getColor(Qt::white, this, "Select background color");
 
-    if (isReady() && color.isValid()) {
+    if (is_ready && color.isValid()) {
         tree_properties->background_color = {
             static_cast<float>(color.red()) / 255.f,
             static_cast<float>(color.green()) / 255.f,
@@ -251,7 +234,9 @@ void LDGSSMInterface::on_disparitySlider_valueChanged(int value)
     ui->disparitySpinBox->blockSignals(true);
     ui->disparitySpinBox->setValue(static_cast<float>(value) / 100.);
     ui->disparitySpinBox->blockSignals(false);
-    emit disparitySelected(static_cast<float>(value) / 100.);
+
+    if (is_ready)
+        grid_controller->selectDisparity(static_cast<float>(value) / 100.);
 }
 
 /**
@@ -263,7 +248,9 @@ void LDGSSMInterface::on_disparitySpinBox_valueChanged(double value)
     ui->disparitySlider->blockSignals(true);
     ui->disparitySlider->setValue(value * 100);
     ui->disparitySlider->blockSignals(false);
-    emit disparitySelected(value);
+
+    if (is_ready)
+        grid_controller->selectDisparity(value);
 }
 
 /**
@@ -272,7 +259,7 @@ void LDGSSMInterface::on_disparitySpinBox_valueChanged(double value)
  */
 void LDGSSMInterface::on_renderTypeSelectBox_currentIndexChanged(int index)
 {
-    if (isReady()) {
+    if (is_ready) {
         volume_properties->render_type = static_cast<VolumeRenderingType>(index);
 
         bool threshold_enabled = volume_properties->render_type != VolumeRenderingType::ISOSURFACE;
@@ -290,7 +277,7 @@ void LDGSSMInterface::on_renderTypeSelectBox_currentIndexChanged(int index)
  */
 void LDGSSMInterface::on_sampleStepsSpinBox_valueChanged(int value)
 {
-    if (isReady()) {
+    if (is_ready) {
         volume_properties->sample_steps = value;
         render_view->updateUniforms();
     }
@@ -306,7 +293,7 @@ void LDGSSMInterface::on_thresholdSlider_valueChanged(int value)
     ui->thresholdSpinBox->setValue(static_cast<float>(value) / 100.);
     ui->thresholdSpinBox->blockSignals(false);
 
-    if (isReady()) {
+    if (is_ready) {
         volume_properties->threshold = static_cast<float>(value) / 100.;
         render_view->updateUniforms();
     }
@@ -322,7 +309,7 @@ void LDGSSMInterface::on_thresholdSpinBox_valueChanged(double value)
     ui->thresholdSlider->setValue(value * 100);
     ui->thresholdSlider->blockSignals(false);
 
-    if (isReady()) {
+    if (is_ready) {
         volume_properties->threshold = value;
         render_view->updateUniforms();
     }
