@@ -69,6 +69,7 @@ void LDGSSMInterface::openFile()
     }
 
     initializeUI();
+    raise();
 }
 
 /**

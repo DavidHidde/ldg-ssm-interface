@@ -1,4 +1,5 @@
 #include "atlas_container.h"
+#include <QElapsedTimer>
 #include <QPainter>
 
 /**
@@ -35,6 +36,9 @@ QPair<std::array<size_t, 3>, size_t> determineAtlasDims(TreeDrawProperties *draw
  */
 AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, size_t max_2D_texture_dim)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     auto [atlas_dims, atlas_block_size] = determineAtlasDims(draw_properties, max_2D_texture_dim);
     auto [img_width, img_height, _] = draw_properties->data_dims;
 
@@ -96,6 +100,8 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
     delete draw_properties->data;
     draw_properties->data = nullptr;
 
+    qDebug() << "Creating image atlas container took" << timer.elapsed() << "milliseconds";
+
     return container;
 }
 
@@ -107,6 +113,9 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
  */
 AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, size_t max_3D_texture_dim)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     auto [atlas_dims, atlas_block_size] = determineAtlasDims(draw_properties, max_3D_texture_dim);
     auto [volume_width, volume_height, volume_depth] = draw_properties->data_dims;
 
@@ -162,6 +171,8 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
     // Not needed anymore
     delete draw_properties->data;
     draw_properties->data = nullptr;
+
+    qDebug() << "Creating volume atlas container took" << timer.elapsed() << "milliseconds";
 
     return container;
 }

@@ -192,7 +192,7 @@ void VolumeRaycaster::updateBuffers()
         // Viewport consists of the origin and side lengths
         viewport_vectors.append({
             origin.x(),
-            window_height - origin.y() - side_len,    // gl_FragCoord starts at bottom left corner
+            origin.y(),
             side_len
         });
 
@@ -224,6 +224,10 @@ void VolumeRaycaster::updateUniforms()
 
     projection_matrix_uniform = shader->uniformLocation("projection_matrix");
     gl->glUniformMatrix4fv(projection_matrix_uniform, 1, false, tree_properties->projection.data());
+
+    screen_origin_uniform = shader->uniformLocation("screen_origin");
+    auto origin_vector = window_properties->device_pixel_ratio * window_properties->draw_origin;
+    gl->glUniform2f(screen_origin_uniform, origin_vector.x(), origin_vector.y());
 
     screen_space_projection_uniform = shader->uniformLocation("screen_space_projection");
     auto vector = tree_properties->gl_space_scale_vector;

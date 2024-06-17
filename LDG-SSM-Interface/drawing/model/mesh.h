@@ -13,7 +13,7 @@ struct Mesh
     QList<unsigned int> indices;
 };
 
-Mesh createPlane(QVector3D origin, float side_len, QVector3D projection, unsigned int vertex_offset);
+Mesh createPlane(QVector3D origin, float side_len);
 
 Mesh createCube(QVector3D origin, float side_len, float depth_factor);
 

@@ -139,7 +139,7 @@ void GridController::handleMouseMoveEvent(QMouseEvent* event)
 
     QVector3D mouse_pos = QVector3D(
         (1. - x_ratio) * -1. + x_ratio * 1.,
-        y_ratio * -1. + (1. - y_ratio) * 1.,
+        (1. - y_ratio) * -1. + y_ratio * 1.,
         0.0
     );
 

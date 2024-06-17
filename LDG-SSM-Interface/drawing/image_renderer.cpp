@@ -21,13 +21,14 @@ ImageRenderer::~ImageRenderer()
     gl->glDeleteVertexArrays(1, &vertex_array_object);
     gl->glDeleteBuffers(1, &vertex_buffer);
     gl->glDeleteBuffers(1, &texcoord_buffer);
-    gl->glDeleteBuffers(1, &texindex_buffer);
+    gl->glDeleteBuffers(1, &texcoord_origin_buffer);
+    gl->glDeleteBuffers(1, &transformation_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
     vertex_array_object = 0;
     vertex_buffer = 0;
     texcoord_buffer = 0;
-    texindex_buffer = 0;
+    transformation_buffer = 0;
     index_buffer = 0;
 
     texture_array.destroy();
@@ -71,12 +72,22 @@ void ImageRenderer::initializeBuffers()
     gl->glGenBuffers(1, &texcoord_buffer);
     gl->glBindBuffer(GL_ARRAY_BUFFER, texcoord_buffer);
     gl->glEnableVertexAttribArray(1);
-    gl->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    gl->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-    gl->glGenBuffers(1, &texindex_buffer);
-    gl->glBindBuffer(GL_ARRAY_BUFFER, texindex_buffer);
+    gl->glGenBuffers(1, &texcoord_origin_buffer);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, texcoord_origin_buffer);
     gl->glEnableVertexAttribArray(2);
-    gl->glVertexAttribPointer(2, 1, GL_UNSIGNED_INT, GL_FALSE, 0, nullptr);
+    gl->glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    gl->glVertexAttribDivisor(2, 1); // Instanced
+
+    // Mat4 requires 4 vertex attribute pointers
+    gl->glGenBuffers(1, &transformation_buffer);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, transformation_buffer);
+    for (unsigned int idx = 0; idx < 4; ++idx) {
+        gl->glEnableVertexAttribArray(3 + idx);
+        gl->glVertexAttribPointer(3 + idx, 4, GL_FLOAT, GL_FALSE, sizeof(QMatrix4x4), (const GLvoid *)(sizeof(QVector4D) * idx));
+        gl->glVertexAttribDivisor(3 + idx, 1); // Instanced
+    }
 
     gl->glGenBuffers(1, &index_buffer);
     gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -126,59 +137,61 @@ void ImageRenderer::initializeTextures()
  */
 void ImageRenderer::updateBuffers()
 {
-    // Gen data
-    QList<QVector3D> vertices;
-    QList<QVector2D> texcoords;
-    QList<unsigned int> texindices;
-    QList<unsigned int> indices;
+    // Set the base to-be-instanced shape, texture coords and indices
+    double base_side_len = window_properties->height_node_lens[tree_properties->tree_max_height] * window_properties->device_pixel_ratio;
+    auto mesh = createPlane(
+        QVector3D{ 0., 0., 0. },
+        base_side_len
+    );
+    gl->glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * mesh.vertices.size(), mesh.vertices.data(), GL_STATIC_DRAW);
 
-    unsigned int counter = 0;
+    gl->glBindBuffer(GL_ARRAY_BUFFER, texcoord_buffer);
+    QList<QVector3D> texcoords{
+        { 0.f, 0.f, 0.f },
+        { atlas_container.coord_offsets.x(), 0.f, 0.f },
+        { 0.f, atlas_container.coord_offsets.y(), 0.f },
+        { atlas_container.coord_offsets.x(), atlas_container.coord_offsets.y(), 0.f }
+    };
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * texcoords.size(), texcoords.data(), GL_STATIC_DRAW);
+
+    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * mesh.indices.size(), mesh.indices.data(), GL_STATIC_DRAW);
+    num_indices = mesh.indices.size();
+
+    // Set data per instance
+    QList<QVector3D> texcoords_origins;
+    QList<QMatrix4x4> transformation_matrices;
+
     float spacing = window_properties->device_pixel_ratio * window_properties->node_spacing;
-    auto draw_origin = window_properties->device_pixel_ratio * window_properties->draw_origin;
     for (auto &[height, index] : tree_properties->draw_array) {
-        float side_len = window_properties->device_pixel_ratio * window_properties->height_node_lens[height];
+        float side_len = window_properties->height_node_lens[height] * window_properties->device_pixel_ratio;
         auto [num_rows, num_cols] = tree_properties->height_dims[height];
         double x = index % num_cols;
         double y = index / num_cols;
 
+        // Transformation translates to the origin of the cell and then scales down to the appropriates sizes.
+        QMatrix4x4 transformation;
         QVector3D origin{
-            draw_origin.x() + static_cast<float>(x * (side_len + spacing)),
-            draw_origin.y() + static_cast<float>(y * (side_len + spacing)),
-            -1.
+            static_cast<float>(x * (side_len + spacing)),
+            static_cast<float>(y * (side_len + spacing)),
+            0.
         };
-        QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
+        float factor = side_len / base_side_len;
+        transformation.translate(origin);
+        transformation.scale(factor, factor);
+        transformation_matrices.append(transformation);
 
-        // Create and add mesh
-        auto mesh = createPlane(origin, side_len, tree_properties->gl_space_scale_vector, counter);
-        vertices.append(mesh.vertices);
-        indices.append(mesh.indices);
-        counter += mesh.vertices.size();
-
-        // Add and assign texture layer
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() } );
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() } );
-        texcoords.append( { cell_texcoords.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-        texcoords.append( { cell_texcoords.x() + atlas_container.coord_offsets.x(), cell_texcoords.y() + atlas_container.coord_offsets.y() } );
-
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
-        texindices.append(cell_texcoords.z());
+        // For the texture coordinate, we can simply pass the origin of the current texture to translate in the shader
+        texcoords_origins.append(atlas_container.mapping[{ height, index }]);
     }
 
     // Bind and set data
-    gl->glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+    gl->glBindBuffer(GL_ARRAY_BUFFER, texcoord_origin_buffer);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector3D) * texcoords_origins.size(), texcoords_origins.data(), GL_STATIC_DRAW);
 
-    gl->glBindBuffer(GL_ARRAY_BUFFER, texcoord_buffer);
-    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QVector2D) * texcoords.size(), texcoords.data(), GL_STATIC_DRAW);
-
-    gl->glBindBuffer(GL_ARRAY_BUFFER, texindex_buffer);
-    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(unsigned int) * texindices.size(), texindices.data(), GL_STATIC_DRAW);
-
-    gl->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl->glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
-    num_indices = indices.size();
+    gl->glBindBuffer(GL_ARRAY_BUFFER, transformation_buffer);
+    gl->glBufferData(GL_ARRAY_BUFFER, sizeof(QMatrix4x4) * transformation_matrices.size(), transformation_matrices.data(), GL_STATIC_DRAW);
 }
 
 /**
@@ -190,6 +203,14 @@ void ImageRenderer::updateUniforms()
 
     model_view_projection_uniform = shader.uniformLocation("projection_matrix");
     gl->glUniformMatrix4fv(model_view_projection_uniform, 1, false, tree_properties->projection.data());
+
+    screen_origin_uniform = shader.uniformLocation("screen_origin");
+    auto origin_vector = window_properties->device_pixel_ratio * window_properties->draw_origin;
+    gl->glUniform2f(screen_origin_uniform, origin_vector.x(), origin_vector.y());
+
+    screen_space_projection_uniform = shader.uniformLocation("screen_space_projection");
+    auto &scale_vector = tree_properties->gl_space_scale_vector;
+    gl->glUniform3f(screen_space_projection_uniform, scale_vector.x(), scale_vector.y(), scale_vector.z());
 
     shader.release();
 }
@@ -207,7 +228,7 @@ void ImageRenderer::render()
     gl->glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     gl->glBindVertexArray(vertex_array_object);
-    gl->glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
+    gl->glDrawElementsInstanced(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr, tree_properties->draw_array.size());
     gl->glBindVertexArray(0);
 
     texture_array.release();

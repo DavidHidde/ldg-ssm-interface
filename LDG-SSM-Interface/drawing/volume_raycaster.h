@@ -17,7 +17,7 @@ class VolumeRaycaster : public Renderer
     VolumeDrawProperties *volume_properties;
     QMap<VolumeRenderingType, QOpenGLShaderProgram *> shaders;
 
-    GLint projection_matrix_uniform, model_view_uniform, screen_space_projection_uniform, texture_coords_offset_uniform, bounding_box_uniform, num_samples_uniform, threshold_uniform;
+    GLint projection_matrix_uniform, model_view_uniform, screen_origin_uniform, screen_space_projection_uniform, texture_coords_offset_uniform, bounding_box_uniform, num_samples_uniform, threshold_uniform;
     GLint background_color_uniform;
 
     GLuint vertex_array_object;

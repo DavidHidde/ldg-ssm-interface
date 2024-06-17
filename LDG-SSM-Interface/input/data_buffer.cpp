@@ -5,6 +5,7 @@
 #include "input_configuration.h"
 #include "visualization_configuration.h"
 
+#include <QElapsedTimer>
 #include <QFileInfo>
 
 /**
@@ -27,6 +28,9 @@ QString fixPath(QString file_path, QString config_dir)
  */
 bool readInput(QString visualization_configuration_path, TreeDrawProperties &tree_properties)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     // Load all config files
     VisualizationConfiguration config;
     if (!config.fromJSONFile(visualization_configuration_path))
@@ -117,6 +121,8 @@ bool readInput(QString visualization_configuration_path, TreeDrawProperties &tre
 
     delete tree_properties.data;
     tree_properties.data = data_map;
+
+    qDebug() << "Loading input took" << timer.elapsed() << "milliseconds";
 
     return true;
 }
