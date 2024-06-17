@@ -30,7 +30,8 @@ RenderView::RenderView(
  */
 RenderView::~RenderView()
 {
-    cleanup();
+    debug_logger.stopLogging();
+    deleteRenderer();
 }
 
 /**
@@ -71,7 +72,6 @@ void RenderView::initializeGL()
 
     makeCurrent();
     gl = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_1_Core>(context());
-    QObject::connect(context(), &QOpenGLContext::aboutToBeDestroyed, this, &RenderView::cleanup);
 }
 
 /**
@@ -85,16 +85,6 @@ void RenderView::paintGL()
     if (renderer != nullptr) {
         OverlayPainter painter(this, tree_properties, window_properties);
         painter.beginNativePainting();  // Begin OpenGL calls ---
-        gl->glEnable(GL_SCISSOR_TEST);
-
-        auto viewport = window_properties->current_viewport;
-        gl->glScissor(
-            viewport.left() * window_properties->device_pixel_ratio,
-            (window_properties->window_size.y() - viewport.top() - viewport.height()) * window_properties->device_pixel_ratio,  // Translate top-left origin to bot-left
-            viewport.width() * window_properties->device_pixel_ratio,
-            viewport.height() * window_properties->device_pixel_ratio
-        );
-
         renderer->render(); // Render content
         painter.endNativePainting();    // End OpenGL calls ---
 
@@ -131,34 +121,45 @@ void RenderView::onGLMessageLogged(QOpenGLDebugMessage message)
 }
 
 /**
- * @brief RenderView::repaint Update the buffers and repaint if they changed.
+ * @brief RenderView::repaint Update the uniforms and buffers and repaint.
+ */
+void RenderView::updateUniformsBuffers()
+{
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateUniforms();
+        renderer->updateBuffers();
+        QOpenGLWidget::update();
+    }
+}
+
+/**
+ * @brief RenderView::repaint Update the buffers and repaint.
  */
 void RenderView::updateBuffers()
 {
-    makeCurrent();
-    renderer->updateBuffers();
-    QOpenGLWidget::update();
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateBuffers();
+        QOpenGLWidget::update();
+    }
 }
 
 /**
- * @brief RenderView::updateUniforms Update the uniforms and repaint if they changed.
+ * @brief RenderView::updateUniforms Update the uniforms and repaint.
  */
 void RenderView::updateUniforms()
 {
-    makeCurrent();
-    renderer->updateUniforms();
-    QOpenGLWidget::update();
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateUniforms();
+        QOpenGLWidget::update();
+    }
 }
 
 /**
- * @brief RenderView::cleanup Cleanup all claimed resources.
+ * @brief RenderView::deleteRenderer
  */
-void RenderView::cleanup()
-{
-    debug_logger.stopLogging();
-    deleteRenderer();
-}
-
 void RenderView::deleteRenderer()
 {
     makeCurrent();

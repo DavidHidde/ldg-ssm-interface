@@ -41,8 +41,8 @@ void OverlayPainter::drawOverlay()
         double y = index / num_cols;
 
         drawRect(
-            std::round(x * (side_len + window_properties->node_spacing) + before_pixels),
-            std::round(y * (side_len + window_properties->node_spacing) + before_pixels),
+            std::round(window_properties->draw_origin.x() + x * (side_len + window_properties->node_spacing) + before_pixels),
+            std::round(window_properties->draw_origin.y() + y * (side_len + window_properties->node_spacing) + before_pixels),
             side_len - pen_width,
             side_len - pen_width
         );

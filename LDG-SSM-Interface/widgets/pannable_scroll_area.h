@@ -16,6 +16,8 @@
  */
 class PannableScrollArea : public QScrollArea
 {
+    Q_OBJECT;
+
     const double SCALE_STEP_SIZE = 0.1;
 
     WindowDrawProperties *window_properties;
@@ -23,13 +25,14 @@ class PannableScrollArea : public QScrollArea
     GridController *grid_controller;
 
     void resizeWidget();
-    void updateViewport();
     bool isReady();
+    bool isInitialized();
 
 public:
     PannableScrollArea(QWidget *parent = nullptr);
 
     void intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, GridController *grid_controller);
+    void updateViewport();
     void updateWindowProperties();
 
 protected:
@@ -46,6 +49,10 @@ public slots:
     void scrollContentsBy(int dx, int dy) override;
 
     void screenChanged();
+
+signals:
+    void viewportPositionChanged();
+    void viewportSizeChanged();
 };
 
 #endif // PANNABLESCROLLAREA_H

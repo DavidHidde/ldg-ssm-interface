@@ -33,41 +33,49 @@ void PannableScrollArea::intialize(WindowDrawProperties *window_properties, Tree
 void PannableScrollArea::updateViewport()
 {
     if (window_properties != nullptr) {
-        int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
-        window_properties->current_viewport = QRect{
-            horizontalScrollBar()->value(),
-            verticalScrollBar()->value(),
-            std::min(width(), scaled_max_dim),
-            std::min(height(), scaled_max_dim)
+        int overflow_width = std::max(0, static_cast<int>(window_properties->scaled_window_size.x() - width()));
+        int overflow_height = std::max(0, static_cast<int>(window_properties->scaled_window_size.y() - height()));
+
+        horizontalScrollBar()->setMaximum(overflow_width);
+        verticalScrollBar()->setMaximum(overflow_height);
+        setHorizontalScrollBarPolicy(overflow_width > 0 ? Qt::ScrollBarAlwaysOn : Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(overflow_height > 0 ? Qt::ScrollBarAlwaysOn : Qt::ScrollBarAlwaysOff);
+
+        window_properties->draw_origin = {
+            std::max(0.f, (static_cast<float>(width()) - window_properties->scaled_window_size.x() + 2) / 2.f) - horizontalScrollBar()->value(),
+            std::max(0.f, (static_cast<float>(height()) - window_properties->scaled_window_size.y() + 2) / 2.f) - verticalScrollBar()->value()
         };
     }
 }
 
 /**
- * @brief PannableScrollArea::updateWindowProperties Update the window properties according to the current window size.
+ * @brief PannableScrollArea::updateWindowProperties Update the screen-space dimensions according to the current window.
  */
 void PannableScrollArea::updateWindowProperties()
 {
     if (window_properties != nullptr && tree_properties != nullptr) {
-        float scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
-
         window_properties->height_node_lens = QList<double>(tree_properties->tree_max_height + 1, 0.);
-        window_properties->device_pixel_ratio = devicePixelRatio();
-        window_properties->window_size = { scaled_max_dim, scaled_max_dim };
-
-        double side_len = scaled_max_dim - 2.; // Subtract 2 pixels to make sure we stay within the borders
+        double side_len = window_properties->scaled_window_size.x() - 2.; // Subtract 2 pixels to make sure we stay within the borders
         for (int curr_height = tree_properties->tree_max_height; curr_height >= 0; --curr_height) {
             window_properties->height_node_lens[curr_height] = side_len;
             side_len = (side_len - window_properties->node_spacing) / 2.;
         }
 
-        float opengl_dim = scaled_max_dim * window_properties->device_pixel_ratio;
         tree_properties->gl_space_scale_vector = QVector3D{
-            2.f / opengl_dim,
-            2.f / opengl_dim,
+            2.f / (static_cast<float>(width()) * window_properties->device_pixel_ratio),
+            2.f / (static_cast<float>(height()) * window_properties->device_pixel_ratio),
             1.f
         };
     }
+}
+
+/**
+ * @brief PannableScrollArea::isInitialized
+ * @return
+ */
+bool PannableScrollArea::isInitialized()
+{
+    return widget() != nullptr && window_properties != nullptr && tree_properties != nullptr && grid_controller != nullptr;
 }
 
 /**
@@ -76,18 +84,7 @@ void PannableScrollArea::updateWindowProperties()
  */
 bool PannableScrollArea::isReady()
 {
-    return widget() != nullptr && window_properties != nullptr && tree_properties != nullptr && grid_controller != nullptr && !tree_properties->draw_array.isEmpty();
-}
-
-/**
- * @brief PannableScrollArea::PannableScrollArea Scale and square the inner widget.
- */
-void PannableScrollArea::resizeWidget()
-{
-    int scaled_max_dim = std::round(window_properties->scale * static_cast<double>(std::min(width(), height())));
-    updateViewport();
-    updateWindowProperties();
-    widget()->resize(scaled_max_dim, scaled_max_dim);
+    return isInitialized() && !tree_properties->draw_array.isEmpty();
 }
 
 /**
@@ -95,10 +92,13 @@ void PannableScrollArea::resizeWidget()
  */
 void PannableScrollArea::fitWindow()
 {
-    if (isReady()) {
+    if (isInitialized()) {
         window_properties->scale = 1.;
+        window_properties->scaled_window_size = window_properties->scale * window_properties->base_window_size;
+
         updateViewport();
-        resizeWidget();
+        updateWindowProperties();
+        emit viewportSizeChanged();
     }
 }
 
@@ -107,10 +107,13 @@ void PannableScrollArea::fitWindow()
  */
 void PannableScrollArea::zoomIn()
 {
-    if (isReady()) {
+    if (isInitialized()) {
         window_properties->scale *= 1 + SCALE_STEP_SIZE;
+        window_properties->scaled_window_size = window_properties->scale * window_properties->base_window_size;
+
         updateViewport();
-        resizeWidget();
+        updateWindowProperties();
+        emit viewportSizeChanged();
     }
 }
 
@@ -119,10 +122,13 @@ void PannableScrollArea::zoomIn()
  */
 void PannableScrollArea::zoomOut()
 {
-    if (isReady() && window_properties->scale > SCALE_STEP_SIZE) {
+    if (isInitialized() && window_properties->scale > SCALE_STEP_SIZE) {
         window_properties->scale /= 1 + SCALE_STEP_SIZE;
+        window_properties->scaled_window_size = window_properties->scale * window_properties->base_window_size;
+
         updateViewport();
-        resizeWidget();
+        updateWindowProperties();
+        emit viewportSizeChanged();
     }
 }
 
@@ -133,11 +139,10 @@ void PannableScrollArea::zoomOut()
  */
 void PannableScrollArea::scrollContentsBy(int dx, int dy)
 {
-    if (isReady()) {
+    if (isInitialized()) {
         updateViewport();
-        widget()->update();
+        emit viewportPositionChanged();
     }
-    QScrollArea::scrollContentsBy(dx, dy);
 }
 
 /**
@@ -147,7 +152,17 @@ void PannableScrollArea::scrollContentsBy(int dx, int dy)
 void PannableScrollArea::resizeEvent(QResizeEvent *event)
 {
     QScrollArea::resizeEvent(event);
-    resizeWidget();
+
+    if (isInitialized()) {
+        float max_dim = std::min(width(), height());
+        window_properties->base_window_size = { max_dim, max_dim };
+        window_properties->scaled_window_size = window_properties->scale * window_properties->base_window_size;
+
+        updateViewport();
+        updateWindowProperties();
+    }
+
+    widget()->resize(width(), height());
 }
 
 /**
@@ -187,6 +202,9 @@ void PannableScrollArea::wheelEvent(QWheelEvent *event)
  */
 void PannableScrollArea::screenChanged()
 {
-    updateWindowProperties();
-    widget()->update();
+    if (isInitialized()) {
+        window_properties->device_pixel_ratio = devicePixelRatio();
+        updateWindowProperties();
+        emit viewportSizeChanged();
+    }
 }

@@ -59,18 +59,14 @@ void LDGSSMInterface::openFile()
     }
     is_ready = render_view != nullptr && scroll_area != nullptr && grid_controller != nullptr && tree_properties != nullptr && window_properties != nullptr && volume_properties != nullptr;
 
-
     // Initialize renderer
-    scroll_area->updateWindowProperties();
     render_view->deleteRenderer();
+    scroll_area->fitWindow();
     if (tree_properties->draw_type == DrawType::IMAGE) {
         render_view->setRenderer(new ImageRenderer(tree_properties, window_properties));
     } else {
         render_view->setRenderer(new VolumeRaycaster(tree_properties, window_properties, volume_properties));
     }
-
-    QObject::connect(grid_controller, &GridController::gridChanged, render_view, &RenderView::updateBuffers);
-    QObject::connect(grid_controller, &GridController::transformationChanged, render_view, &RenderView::updateUniforms);
 
     initializeUI();
 }
@@ -168,7 +164,12 @@ void LDGSSMInterface::initializeModelController()
 
     scroll_area->intialize(window_properties, tree_properties, grid_controller);
     scroll_area->setWidget(render_view);
+
+    QObject::connect(grid_controller, &GridController::gridChanged, render_view, &RenderView::updateBuffers);
+    QObject::connect(grid_controller, &GridController::transformationChanged, render_view, &RenderView::updateUniforms);
     QObject::connect(window()->windowHandle(), &QWindow::screenChanged, scroll_area, &PannableScrollArea::screenChanged);
+    QObject::connect(scroll_area, &PannableScrollArea::viewportSizeChanged, render_view, &RenderView::updateUniformsBuffers);
+    QObject::connect(scroll_area, &PannableScrollArea::viewportPositionChanged, render_view, &RenderView::updateUniforms);
 }
 
 /**

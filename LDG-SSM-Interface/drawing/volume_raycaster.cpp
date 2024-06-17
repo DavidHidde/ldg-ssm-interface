@@ -169,7 +169,7 @@ void VolumeRaycaster::updateBuffers()
     QList<QVector3D> viewport_vectors;
     QList<QVector3D> volume_coords;
     float spacing = window_properties->node_spacing * window_properties->device_pixel_ratio;
-    float window_height = window_properties->window_size.y() * window_properties->device_pixel_ratio;
+    float window_height = window_properties->scaled_window_size.y() * window_properties->device_pixel_ratio;
     for (auto &[height, index] : tree_properties->draw_array) {
         float side_len = window_properties->height_node_lens[height] * window_properties->device_pixel_ratio;
         auto [num_rows, num_cols] = tree_properties->height_dims[height];

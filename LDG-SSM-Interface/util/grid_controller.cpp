@@ -75,8 +75,8 @@ void GridController::mergeNode(size_t height, size_t index, QSet<QPair<size_t, s
 std::pair<int, int> GridController::resolveGridPosition(QPointF &position)
 {
     auto side_len = window_properties->height_node_lens[0] + window_properties->node_spacing;
-    size_t col = std::max(0., std::floor((position.x() - 1 + window_properties->node_spacing / 2.) / side_len));
-    size_t row = std::max(0., std::floor((position.y() - 1 + window_properties->node_spacing / 2.) / side_len));
+    size_t col = std::max(0., std::floor((position.x() - window_properties->draw_origin.x() - 1 + window_properties->node_spacing / 2.) / side_len));
+    size_t row = std::max(0., std::floor((position.y() - window_properties->draw_origin.y() - 1 + window_properties->node_spacing / 2.) / side_len));
 
     int found_index = -1;
     int found_height = -1;
@@ -134,8 +134,8 @@ void GridController::handleMouseMoveEvent(QMouseEvent* event)
     }
 
     // Normalize coordinates
-    float x_ratio = event->position().x() / window_properties->window_size.x();
-    float y_ratio = event->position().y() / window_properties->window_size.y();
+    float x_ratio = event->position().x() / window_properties->base_window_size.x();
+    float y_ratio = event->position().y() / window_properties->base_window_size.y();
 
     QVector3D mouse_pos = QVector3D(
         (1. - x_ratio) * -1. + x_ratio * 1.,

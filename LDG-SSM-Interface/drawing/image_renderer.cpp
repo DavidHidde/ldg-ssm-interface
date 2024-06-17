@@ -134,6 +134,7 @@ void ImageRenderer::updateBuffers()
 
     unsigned int counter = 0;
     float spacing = window_properties->device_pixel_ratio * window_properties->node_spacing;
+    auto draw_origin = window_properties->device_pixel_ratio * window_properties->draw_origin;
     for (auto &[height, index] : tree_properties->draw_array) {
         float side_len = window_properties->device_pixel_ratio * window_properties->height_node_lens[height];
         auto [num_rows, num_cols] = tree_properties->height_dims[height];
@@ -141,8 +142,8 @@ void ImageRenderer::updateBuffers()
         double y = index / num_cols;
 
         QVector3D origin{
-            static_cast<float>(x * (side_len + spacing)),
-            static_cast<float>(y * (side_len + spacing)),
+            draw_origin.x() + static_cast<float>(x * (side_len + spacing)),
+            draw_origin.y() + static_cast<float>(y * (side_len + spacing)),
             -1.
         };
         QVector3D cell_texcoords = atlas_container.mapping[{ height, index }];
