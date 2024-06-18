@@ -20,19 +20,27 @@ class LDGSSMInterface: public QMainWindow
     Q_OBJECT
 
     Ui::LDGSSMInterface *ui;
+    bool is_ready = false;
 
-    PannableScrollArea *scroll_area;
-    RenderView *render_view;
+    // Model
+    TreeDrawProperties *tree_properties = nullptr;
+    WindowDrawProperties *window_properties = nullptr;
+    VolumeDrawProperties *volume_properties = nullptr;
 
-    TreeDrawProperties *tree_properties;
-    WindowDrawProperties *window_properties;
-    VolumeDrawProperties *volume_properties;
+    // View
+    RenderView *render_view = nullptr;
+
+    // Controller
+    PannableScrollArea *scroll_area = nullptr;
+    GridController *grid_controller = nullptr;
+    ScreenController *screen_controller = nullptr;
 
     QMenu *file_menu;
     QMenu *view_menu;
 
     void initializeMenus();
     void initializeUI();
+    void initializeModelController();
 
 public:
     LDGSSMInterface(QWidget *parent = nullptr);    
@@ -54,9 +62,6 @@ private slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
-
-signals:
-    void selectionChanged(size_t height);
 
 };
 #endif // LDGSSMINTERFACE_H

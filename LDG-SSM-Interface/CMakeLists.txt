@@ -20,16 +20,22 @@ set(PROJECT_SOURCES
         ldg_ssm_interface.ui
 )
 
+set(MACOSX_BUNDLE_ICON_FILE icons.icns)
+set(app_icon_macos "${CMAKE_CURRENT_SOURCE_DIR}/icons.icns")
+set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(LDG-SSM-Interface
+        WIN32 MACOSX_BUNDLE
+        ${app_icon_macos}
+        assets.qrc
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         widgets/pannable_scroll_area.h widgets/pannable_scroll_area.cpp
         util/tree_functions.h util/tree_functions.cpp
         widgets/render_view.h widgets/render_view.cpp
-        drawing/model/tree_draw_properties.h
+        drawing/model/tree_draw_properties.h drawing/model/tree_draw_properties.cpp
         drawing/overlay_painter.h drawing/overlay_painter.cpp
-        assets.qrc
         util/grid_controller.h util/grid_controller.cpp
         drawing/renderer.h drawing/renderer.cpp
         drawing/image_renderer.h drawing/image_renderer.cpp
@@ -44,6 +50,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         input/data.h
         drawing/model/volume_draw_properties.h drawing/model/volume_draw_properties.cpp
         drawing/model/window_draw_properties.h
+        util/screen_controller.h util/screen_controller.cpp
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -28,9 +28,15 @@ VolumeRaycaster::~VolumeRaycaster()
     gl->glDeleteBuffers(1, &texture_coords_buffer);
     gl->glDeleteBuffers(1, &index_buffer);
 
+    vertex_array_object = 0;
+    vertex_buffer = 0;
+    transformation_buffer = 0;
+    viewport_buffer = 0;
+    texture_coords_buffer = 0;
+    index_buffer = 0;
+
     volume_texture.destroy();
     qDeleteAll(shaders);
-    delete volume_properties;
 }
 
 /**
@@ -163,7 +169,7 @@ void VolumeRaycaster::updateBuffers()
     QList<QVector3D> viewport_vectors;
     QList<QVector3D> volume_coords;
     float spacing = window_properties->node_spacing * window_properties->device_pixel_ratio;
-    float window_height = window_properties->window_size.y() * window_properties->device_pixel_ratio;
+    float window_height = window_properties->scaled_window_size.y() * window_properties->device_pixel_ratio;
     for (auto &[height, index] : tree_properties->draw_array) {
         float side_len = window_properties->height_node_lens[height] * window_properties->device_pixel_ratio;
         auto [num_rows, num_cols] = tree_properties->height_dims[height];
@@ -186,7 +192,7 @@ void VolumeRaycaster::updateBuffers()
         // Viewport consists of the origin and side lengths
         viewport_vectors.append({
             origin.x(),
-            window_height - origin.y() - side_len,    // gl_FragCoord starts at bottom left corner
+            origin.y(),
             side_len
         });
 
@@ -218,6 +224,10 @@ void VolumeRaycaster::updateUniforms()
 
     projection_matrix_uniform = shader->uniformLocation("projection_matrix");
     gl->glUniformMatrix4fv(projection_matrix_uniform, 1, false, tree_properties->projection.data());
+
+    screen_origin_uniform = shader->uniformLocation("screen_origin");
+    auto origin_vector = window_properties->device_pixel_ratio * window_properties->draw_origin;
+    gl->glUniform2f(screen_origin_uniform, origin_vector.x(), origin_vector.y());
 
     screen_space_projection_uniform = shader->uniformLocation("screen_space_projection");
     auto vector = tree_properties->gl_space_scale_vector;
@@ -263,9 +273,6 @@ void VolumeRaycaster::render()
 {   
     gl->glEnable(GL_DEPTH_TEST);
     gl->glDepthFunc(GL_LEQUAL);
-
-    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shaders[volume_properties->render_type]->bind();
     volume_texture.bind();

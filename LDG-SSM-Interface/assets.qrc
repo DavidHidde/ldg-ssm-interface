@@ -8,5 +8,6 @@
         <file>shaders/max_intensity.frag</file>
         <file>shaders/average_intensity.frag</file>
         <file>shaders/accumulate.frag</file>
+        <file>icon.ico</file>
     </qresource>
 </RCC>

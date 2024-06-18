@@ -15,9 +15,9 @@ class ImageRenderer : public Renderer
     QOpenGLTexture texture_array;
     QOpenGLShaderProgram shader;
 
-    GLint model_view_projection_uniform;
+    GLint model_view_projection_uniform, screen_space_projection_uniform, screen_origin_uniform;
     GLuint vertex_array_object;
-    GLuint vertex_buffer, texcoord_buffer, texindex_buffer, index_buffer;
+    GLuint vertex_buffer, texcoord_buffer, texcoord_origin_buffer, transformation_buffer, index_buffer;
 
     AtlasContainer atlas_container;
 
