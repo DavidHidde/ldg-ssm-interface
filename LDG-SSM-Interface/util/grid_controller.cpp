@@ -13,7 +13,6 @@ GridController::GridController(TreeDrawProperties *tree_properties, WindowDrawPr
     window_properties(window_properties),
     volume_properties(volume_properties)
 {
-    reset();
 }
 
 /**
@@ -65,127 +64,6 @@ void GridController::mergeNode(size_t height, size_t index, QSet<QPair<size_t, s
 
     // Finally, add the parent
     tree_properties->draw_array.insert({ height + 1, parent_index });
-}
-
-/**
- * @brief GridController::resolveGridPosition Find the grid cell on the specified position. Returns -1 if it didn't find anything.
- * @param position
- * @return
- */
-std::pair<int, int> GridController::resolveGridPosition(QPointF &position)
-{
-    auto side_len = window_properties->height_node_lens[0] + window_properties->node_spacing;
-    size_t col = std::max(0., std::floor((position.x() - window_properties->draw_origin.x() - 1 + window_properties->node_spacing / 2.) / side_len));
-    size_t row = std::max(0., std::floor((position.y() - window_properties->draw_origin.y() - 1 + window_properties->node_spacing / 2.) / side_len));
-
-    int found_index = -1;
-    int found_height = -1;
-    for (size_t height = 0; height <= tree_properties->tree_max_height; ++height, col /= 2, row /= 2) {
-        auto [num_rows, num_cols] = tree_properties->height_dims[height];
-        int possible_index = row * num_cols + col;
-        if (col < num_cols && row < num_rows && tree_properties->draw_array.contains({ height, possible_index })) {
-            found_index = possible_index;
-            found_height = height;
-            break;
-        }
-    }
-
-    return { found_height, found_index };
-}
-
-/**
- * @brief GridController::handleMouseClick Finds the clicked node and splits or merges it if appropriate.
- * @param event
- */
-void GridController::handleMouseClick(QMouseEvent *event)
-{
-    if (event->modifiers() != Qt::ControlModifier && (event->buttons() == Qt::RightButton || event->buttons() == Qt::LeftButton)) {
-        auto position = event->position();
-        auto [height, index] = resolveGridPosition(position);
-
-        // We found the clicked node
-        if (index != -1 && height != -1) {
-            if (event->buttons() == Qt::RightButton && height < tree_properties->tree_max_height) {
-                mergeNode(height, index);
-                emit gridChanged();
-            }
-            if (event->buttons() == Qt::LeftButton && height > 0) {
-                splitNode(height, index);
-                emit gridChanged();
-            }
-        }
-    }
-}
-
-/**
- * @brief GridController::mouseMoveEvent Handles the dragging and rotating of the mesh
- * by looking at the mouse movement.
- * @param event Mouse event.
- * @param width
- * @param height
- */
-void GridController::handleMouseMoveEvent(QMouseEvent* event)
-{
-    // Reset drag if we're not dragging
-    if (event->buttons() != Qt::LeftButton || event->modifiers() != Qt::ControlModifier) {
-        is_dragging = false;
-        prev_dragging_position = QVector3D();
-        return;
-    }
-
-    // Normalize coordinates
-    float x_ratio = event->position().x() / window_properties->base_window_size.x();
-    float y_ratio = event->position().y() / window_properties->base_window_size.y();
-
-    QVector3D mouse_pos = QVector3D(
-        (1. - x_ratio) * -1. + x_ratio * 1.,
-        (1. - y_ratio) * -1. + y_ratio * 1.,
-        0.0
-    );
-
-    // Project onto sphere
-    float sqr_z = 1.0f - QVector3D::dotProduct(mouse_pos, mouse_pos);
-    if (sqr_z > 0) {
-        mouse_pos.setZ(std::sqrt(sqr_z));
-    } else {
-        mouse_pos.normalize();
-    }
-
-    // Reset if we are starting a drag
-    if (!is_dragging) {
-        is_dragging = true;
-        prev_dragging_position = mouse_pos;
-        return;
-    }
-
-    // Calculate axis and angle
-    QVector3D new_pos = mouse_pos.normalized();
-    QVector3D last_pos = prev_dragging_position.normalized();
-    QVector3D axis = QVector3D::crossProduct(last_pos, new_pos);
-    if (axis.length() == 0.0f) {
-        prev_dragging_position = mouse_pos;
-        return;
-    }
-    float angle = 180.f / M_PI * std::acos(QVector3D::dotProduct(last_pos, new_pos));
-    rotation = QQuaternion::fromAxisAndAngle(rotation.rotatedVector(axis), angle) * rotation;
-    prev_dragging_position = mouse_pos;
-
-    updateTransformations();
-    emit transformationChanged();
-}
-
-/**
- * @brief GridController::handleMouseScrollEvent Move the camera when scrolling
- * @param event
- */
-void GridController::handleMouseScrollEvent(QWheelEvent *event)
-{
-    if (event->modifiers() == Qt::ControlModifier) {
-        float phi = event->angleDelta().y() / 200.0f;
-        translation.setZ(std::min(translation.z() + phi, 3.5f));
-        updateTransformations();
-        emit transformationChanged();;
-    }
 }
 
 /**
@@ -245,25 +123,4 @@ void GridController::selectDisparity(double disparity_threshold)
 
     if (changed)
         emit gridChanged();
-}
-
-/**
- * @brief GridController::reset Reset the transformations.
- */
-void GridController::reset()
-{
-    rotation = QQuaternion::fromEulerAngles(QVector3D{ 270, 0, 0 });
-    translation = QVector3D{ 0., 0., 0. };
-    updateTransformations();
-    emit transformationChanged();
-}
-
-/**
- * @brief GridController::updateTransformations Update the model view matrix
- */
-void GridController::updateTransformations()
-{
-    volume_properties->camera_view_transformation.setToIdentity();
-    volume_properties->camera_view_transformation.rotate(rotation);
-    volume_properties->camera_view_transformation.translate(translation);
 }

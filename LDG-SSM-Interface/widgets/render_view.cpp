@@ -22,6 +22,7 @@ RenderView::RenderView(
     window_properties(window_properties),
     QOpenGLWidget(parent)
 {
+    setMouseTracking(true); // Deferred to the parent
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 

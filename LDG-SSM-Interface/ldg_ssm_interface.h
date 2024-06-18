@@ -33,6 +33,7 @@ class LDGSSMInterface: public QMainWindow
     // Controller
     PannableScrollArea *scroll_area = nullptr;
     GridController *grid_controller = nullptr;
+    ScreenController *screen_controller = nullptr;
 
     QMenu *file_menu;
     QMenu *view_menu;

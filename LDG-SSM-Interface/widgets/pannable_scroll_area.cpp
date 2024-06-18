@@ -6,9 +6,12 @@
  * @param parent
  */
 PannableScrollArea::PannableScrollArea(QWidget *parent):
-    QScrollArea(parent)
+    QScrollArea(parent),
+    tree_properties(nullptr),
+    window_properties(nullptr),
+    screen_controller(nullptr)
 {
-    setMouseTracking(true);
+    viewport()->setMouseTracking(true);
     setAlignment(Qt::AlignCenter);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setFrameShape(QFrame::NoFrame);
@@ -18,13 +21,13 @@ PannableScrollArea::PannableScrollArea(QWidget *parent):
  * @brief PannableScrollArea::intialize
  * @param window_properties
  * @param tree_properties
- * @param grid_controller
+ * @param screen_controller
  */
-void PannableScrollArea::intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, GridController *grid_controller)
+void PannableScrollArea::intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, ScreenController *screen_controller)
 {
     this->window_properties = window_properties;
     this->tree_properties = tree_properties;
-    this->grid_controller = grid_controller;
+    this->screen_controller = screen_controller;
 }
 
 /**
@@ -75,7 +78,7 @@ void PannableScrollArea::updateWindowProperties()
  */
 bool PannableScrollArea::isInitialized()
 {
-    return widget() != nullptr && window_properties != nullptr && tree_properties != nullptr && grid_controller != nullptr;
+    return widget() != nullptr && window_properties != nullptr && tree_properties != nullptr && screen_controller != nullptr;
 }
 
 /**
@@ -172,7 +175,7 @@ void PannableScrollArea::resizeEvent(QResizeEvent *event)
 void PannableScrollArea::mousePressEvent(QMouseEvent *event)
 {
     if (isReady())
-        grid_controller->handleMouseClick(event);
+        screen_controller->handleMousePressEvent(event);
 }
 
 /**
@@ -182,7 +185,7 @@ void PannableScrollArea::mousePressEvent(QMouseEvent *event)
 void PannableScrollArea::mouseMoveEvent(QMouseEvent *event)
 {
     if (isReady())
-        grid_controller->handleMouseMoveEvent(event);
+        screen_controller->handleMouseMoveEvent(event, width(), height());
 }
 
 /**
@@ -192,9 +195,27 @@ void PannableScrollArea::mouseMoveEvent(QMouseEvent *event)
 void PannableScrollArea::wheelEvent(QWheelEvent *event)
 {
     if (event->modifiers() == Qt::ControlModifier && isReady())
-        grid_controller->handleMouseScrollEvent(event);
+        screen_controller->handleWheelEvent(event);
     else
         QScrollArea::wheelEvent(event);
+}
+
+/**
+ * @brief PannableScrollArea::viewportEvent Override to properly capture mouse events.
+ * @param event
+ * @return
+ */
+bool PannableScrollArea::viewportEvent(QEvent *event)
+{
+    if (event->type() == QEvent::MouseMove) {
+        mouseMoveEvent(static_cast<QMouseEvent*>(event));
+        return true;
+    }
+    if (event->type() == QEvent::MouseButtonPress) {
+        mousePressEvent(static_cast<QMouseEvent*>(event));
+        return true;
+    }
+    return QScrollArea::viewportEvent(event);
 }
 
 /**

@@ -22,33 +22,18 @@ class GridController: public QObject
     WindowDrawProperties *window_properties;
     VolumeDrawProperties *volume_properties;
 
-    bool is_dragging = false;
-    QVector3D prev_dragging_position;
-    QQuaternion rotation;
-    QVector3D translation;
-
 public:
     GridController(TreeDrawProperties *draw_properties, WindowDrawProperties *window_properties, VolumeDrawProperties *volume_properties);
-
-    std::pair<int, int> resolveGridPosition(QPointF &position);
 
     void splitNode(size_t height, size_t index);
     void mergeNode(size_t height, size_t index, QSet<QPair<size_t, size_t>> *nodes_merged);
 
 public slots:
-    void handleMouseClick(QMouseEvent *event);
-    void handleMouseMoveEvent(QMouseEvent *event);
-    void handleMouseScrollEvent(QWheelEvent *event);
-
     void selectHeight(size_t height);
     void selectDisparity(double disparity);
 
-    void reset();
-    void updateTransformations();
-
 signals:
     void gridChanged();
-    void transformationChanged();
 };
 
 #endif // GRID_CONTROLLER_H

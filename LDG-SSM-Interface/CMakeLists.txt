@@ -44,6 +44,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         input/data.h
         drawing/model/volume_draw_properties.h drawing/model/volume_draw_properties.cpp
         drawing/model/window_draw_properties.h
+        util/screen_controller.h util/screen_controller.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET LDG-SSM-Interface APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

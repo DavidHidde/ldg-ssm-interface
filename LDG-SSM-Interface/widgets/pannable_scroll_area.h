@@ -7,10 +7,11 @@
 #include <drawing/model/tree_draw_properties.h>
 #include <drawing/model/window_draw_properties.h>
 
-#include <util/grid_controller.h>
+#include <util/screen_controller.h>
 
 /**
- * A scroll area that is able to zoom and interact with the underlying content. This acts as a controller for mouse interactions.
+ * A scroll area that is able to zoom and interact with the underlying content.
+ * This acts as a controller for the window itself, setting all screen-space related properties while delegating click-related interactions to the screen controller.
  *
  * @brief The PannableScrollArea class
  */
@@ -22,7 +23,7 @@ class PannableScrollArea : public QScrollArea
 
     WindowDrawProperties *window_properties;
     TreeDrawProperties *tree_properties;
-    GridController *grid_controller;
+    ScreenController *screen_controller;
 
     void resizeWidget();
     bool isReady();
@@ -31,7 +32,7 @@ class PannableScrollArea : public QScrollArea
 public:
     PannableScrollArea(QWidget *parent = nullptr);
 
-    void intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, GridController *grid_controller);
+    void intialize(WindowDrawProperties *window_properties, TreeDrawProperties *tree_properties, ScreenController *screen_controller);
     void updateViewport();
     void updateWindowProperties();
 
@@ -41,6 +42,8 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+
+    bool viewportEvent(QEvent* event) override;
 
 public slots:
     void fitWindow();

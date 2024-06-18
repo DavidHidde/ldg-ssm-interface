@@ -161,13 +161,15 @@ void LDGSSMInterface::initializeModelController()
     window_properties->device_pixel_ratio = static_cast<float>(devicePixelRatio());
 
     grid_controller = new GridController(tree_properties, window_properties, volume_properties);
+    screen_controller = new ScreenController(tree_properties, window_properties, volume_properties, grid_controller);
     render_view = new RenderView(scroll_area, tree_properties, window_properties);
 
-    scroll_area->intialize(window_properties, tree_properties, grid_controller);
+    scroll_area->intialize(window_properties, tree_properties, screen_controller);
     scroll_area->setWidget(render_view);
 
     QObject::connect(grid_controller, &GridController::gridChanged, render_view, &RenderView::updateBuffers);
-    QObject::connect(grid_controller, &GridController::transformationChanged, render_view, &RenderView::updateUniforms);
+    QObject::connect(screen_controller, &ScreenController::gridChanged, render_view, &RenderView::updateBuffers);
+    QObject::connect(screen_controller, &ScreenController::transformationChanged, render_view, &RenderView::updateUniforms);
     QObject::connect(window()->windowHandle(), &QWindow::screenChanged, scroll_area, &PannableScrollArea::screenChanged);
     QObject::connect(scroll_area, &PannableScrollArea::viewportSizeChanged, render_view, &RenderView::updateUniformsBuffers);
     QObject::connect(scroll_area, &PannableScrollArea::viewportPositionChanged, render_view, &RenderView::updateUniforms);
@@ -179,7 +181,7 @@ void LDGSSMInterface::initializeModelController()
 void LDGSSMInterface::resetView()
 {
     if (is_ready) {
-        grid_controller->reset();
+        screen_controller->reset();
         scroll_area->fitWindow();
     }
 }
