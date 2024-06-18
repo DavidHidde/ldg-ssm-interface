@@ -1,41 +1,25 @@
 #include "mesh.h"
 
 /**
- * @brief project Project from screen space to world space
- * @param source
- * @param projection
- * @return
- */
-QVector3D project(QVector3D source, QVector3D projection)
-{
-    return source * projection - QVector3D{ 1., 1., 0.};
-}
-
-/**
  * @brief createPlane Create a square 2D plane mesh.
  * @param origin
  * @param side_len
- * @param projection
  * @return
  */
-Mesh createPlane(QVector3D origin, float side_len, QVector3D projection, unsigned int vertex_offset)
+Mesh createPlane(QVector3D origin, float side_len)
 {
     return {
         {
-            project(origin, projection),                                        // Top left - 0
-            project(origin + QVector3D{ side_len, 0., 0. }, projection),        // Top right - 1
-            project(origin + QVector3D{ 0., side_len, 0. }, projection),        // Bot left - 2
-            project(origin + QVector3D{ side_len, side_len, 0. }, projection)   // Bot right - 3
+            origin,                                         // Top left - 0
+            origin + QVector3D{ side_len, 0., 0. },         // Top right - 1
+            origin + QVector3D{ 0., side_len, 0. },         // Bot left - 2
+            origin + QVector3D{ side_len, side_len, 0. }    // Bot right - 3
         },
         {
             // Top left - Bot left - Bot right
-            vertex_offset,
-            vertex_offset + 2,
-            vertex_offset + 3,
+            0, 2, 3,
             // Top left - Bot right - Top right
-            vertex_offset,
-            vertex_offset + 3,
-            vertex_offset + 1
+            0, 3, 1
         }
     };
 }

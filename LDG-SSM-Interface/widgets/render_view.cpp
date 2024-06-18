@@ -12,27 +12,18 @@
  * @param parent
  * @param tree_properties
  * @param window_properties
- * @param grid_controller
- * @param renderer
  */
 RenderView::RenderView(
     QWidget *parent,
     TreeDrawProperties *tree_properties,
-    WindowDrawProperties *window_properties,
-    GridController *grid_controller,
-    Renderer *renderer
+    WindowDrawProperties *window_properties
 ):
     tree_properties(tree_properties),
     window_properties(window_properties),
-    grid_controller(grid_controller),
-    renderer(renderer),
     QOpenGLWidget(parent)
 {
-    setMouseTracking(true);
+    setMouseTracking(true); // Deferred to the parent
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-
-    QObject::connect(grid_controller, &GridController::gridChanged, this, &RenderView::updateBuffers);
-    QObject::connect(grid_controller, &GridController::transformationChanged, this, &RenderView::updateUniforms);
 }
 
 /**
@@ -41,11 +32,18 @@ RenderView::RenderView(
 RenderView::~RenderView()
 {
     debug_logger.stopLogging();
+    deleteRenderer();
+}
 
-    delete renderer;
-    delete grid_controller;
-    delete tree_properties;
-    delete window_properties;
+/**
+ * @brief RenderView::setRenderer
+ * @param renderer
+ */
+void RenderView::setRenderer(Renderer *renderer)
+{
+    this->renderer = renderer;
+    makeCurrent();
+    renderer->intialize(gl);
 }
 
 /**
@@ -74,7 +72,7 @@ void RenderView::initializeGL()
     }
 
     makeCurrent();
-    renderer->intialize(QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_1_Core>(this->context()));
+    gl = QOpenGLVersionFunctionsFactory::get<QOpenGLFunctions_4_1_Core>(context());
 }
 
 /**
@@ -82,23 +80,18 @@ void RenderView::initializeGL()
  */
 void RenderView::paintGL()
 {
-    OverlayPainter painter(this, tree_properties, window_properties);
-    painter.beginNativePainting();  // Begin OpenGL calls ---
-    glEnable(GL_SCISSOR_TEST);
+    gl->glClearColor(tree_properties->background_color.x(), tree_properties->background_color.y(), tree_properties->background_color.z(), 1.0);
+    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    auto viewport = window_properties->current_viewport;
-    glScissor(
-        viewport.left() * window_properties->device_pixel_ratio,
-        (window_properties->window_size.y() - viewport.top() - viewport.height()) * window_properties->device_pixel_ratio,  // Translate top-left origin to bot-left
-        viewport.width() * window_properties->device_pixel_ratio,
-        viewport.height() * window_properties->device_pixel_ratio
-    );
+    if (renderer != nullptr) {
+        OverlayPainter painter(this, tree_properties, window_properties);
+        painter.beginNativePainting();  // Begin OpenGL calls ---
+        renderer->render(); // Render content
+        painter.endNativePainting();    // End OpenGL calls ---
 
-    renderer->render(); // Render content
-    painter.endNativePainting();    // End OpenGL calls ---
-
-    // Draw the grid overlay
-    painter.drawOverlay();
+        // Draw the grid overlay
+        painter.drawOverlay();
+    }
 }
 
 /**
@@ -108,55 +101,15 @@ void RenderView::paintGL()
  */
 void RenderView::resizeGL(int width, int height)
 {
-    // Update drawing properties.
+    makeCurrent();
     float opengl_width = width * window_properties->device_pixel_ratio;
     float opengl_height = height * window_properties->device_pixel_ratio;
-    double side_len = width - 2; // Subtract 2 pixels to make sure we stay within the borders
-    for (int curr_height = tree_properties->tree_max_height; curr_height >= 0; --curr_height) {
-        window_properties->height_node_lens[curr_height] = side_len;
-        side_len = (side_len - window_properties->node_spacing) / 2.;
+
+    gl->glViewport(0, 0, opengl_width, opengl_height);
+    if (renderer != nullptr) {
+        renderer->updateUniforms();
+        renderer->updateBuffers();
     }
-    tree_properties->gl_space_scale_vector = QVector3D{
-        2.f / opengl_width,
-        2.f / opengl_height,
-        1.f
-    };
-
-    // Update renderer
-    glViewport(0, 0, opengl_width, opengl_height);
-    window_properties->window_size = { static_cast<float>(width), static_cast<float>(height) };
-    renderer->updateUniforms();
-    renderer->updateBuffers();
-}
-
-/**
- * @brief RenderView::mousePressEvent
- * @param event
- */
-void RenderView::mousePressEvent(QMouseEvent *event)
-{
-    grid_controller->handleMouseClick(event);
-}
-
-/**
- * @brief RenderView::mouseMoveEvent
- * @param event
- */
-void RenderView::mouseMoveEvent(QMouseEvent *event)
-{
-    grid_controller->handleMouseMoveEvent(event);
-}
-
-/**
- * @brief RenderView::wheelEvent
- * @param event
- */
-void RenderView::wheelEvent(QWheelEvent *event)
-{
-    if (event->modifiers() == Qt::ControlModifier)
-        grid_controller->handleMouseScrollEvent(event);
-    else
-        QOpenGLWidget::wheelEvent(event);
 }
 
 /**
@@ -169,37 +122,48 @@ void RenderView::onGLMessageLogged(QOpenGLDebugMessage message)
 }
 
 /**
- * @brief RenderView::repaint Update the buffers and repaint if they changed.
+ * @brief RenderView::repaint Update the uniforms and buffers and repaint.
+ */
+void RenderView::updateUniformsBuffers()
+{
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateUniforms();
+        renderer->updateBuffers();
+        QOpenGLWidget::update();
+    }
+}
+
+/**
+ * @brief RenderView::repaint Update the buffers and repaint.
  */
 void RenderView::updateBuffers()
 {
-    renderer->updateBuffers();
-    QOpenGLWidget::update();
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateBuffers();
+        QOpenGLWidget::update();
+    }
 }
 
 /**
- * @brief RenderView::updateUniforms Update the uniforms and repaint if they changed.
+ * @brief RenderView::updateUniforms Update the uniforms and repaint.
  */
 void RenderView::updateUniforms()
 {
-    renderer->updateUniforms();
-    QOpenGLWidget::update();
+    if (renderer != nullptr) {
+        makeCurrent();
+        renderer->updateUniforms();
+        QOpenGLWidget::update();
+    }
 }
 
 /**
- * @brief RenderView::resetView
+ * @brief RenderView::deleteRenderer
  */
-void RenderView::resetView()
+void RenderView::deleteRenderer()
 {
-    grid_controller->reset();
-}
-
-/**
- * @brief RenderView::screenChanged Update the device pixel ratio when switching screens
- */
-void RenderView::screenChanged()
-{
-    window_properties->device_pixel_ratio = devicePixelRatio();
-    resizeGL(width(), height());
-    update();
+    makeCurrent();
+    delete renderer;
+    doneCurrent();
 }

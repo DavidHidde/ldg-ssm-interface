@@ -1,4 +1,5 @@
 #include "atlas_container.h"
+#include <QElapsedTimer>
 #include <QPainter>
 
 /**
@@ -35,6 +36,9 @@ QPair<std::array<size_t, 3>, size_t> determineAtlasDims(TreeDrawProperties *draw
  */
 AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, size_t max_2D_texture_dim)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     auto [atlas_dims, atlas_block_size] = determineAtlasDims(draw_properties, max_2D_texture_dim);
     auto [img_width, img_height, _] = draw_properties->data_dims;
 
@@ -63,9 +67,8 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
 
     // Fill mapping and atlasses
     size_t count = 0;
-    for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
+    for (auto [key, raw_image] : draw_properties->data->asKeyValueRange()) {
         auto &[height, index] = key;
-        auto &[raw_image, _] = data;
         QImage image{ raw_image.data(), static_cast<int>(img_width), static_cast<int>(img_height), QImage::Format_RGBA8888 };
         int atlas_idx = count / images_per_atlas;
         int canvas_idx = count % images_per_atlas;
@@ -95,6 +98,9 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
 
     // Not needed anymore
     delete draw_properties->data;
+    draw_properties->data = nullptr;
+
+    qDebug() << "Creating image atlas container took" << timer.elapsed() << "milliseconds";
 
     return container;
 }
@@ -107,6 +113,9 @@ AtlasContainer createImageAtlasContainer(TreeDrawProperties *draw_properties, si
  */
 AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, size_t max_3D_texture_dim)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     auto [atlas_dims, atlas_block_size] = determineAtlasDims(draw_properties, max_3D_texture_dim);
     auto [volume_width, volume_height, volume_depth] = draw_properties->data_dims;
 
@@ -132,9 +141,7 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
 
     // Build the atlas by copying data from the volume buffers to the container buffer.
     size_t count = 0;
-    for (auto [key, data] : draw_properties->data->asKeyValueRange()) {
-        auto &[volume_data, _] = data;
-
+    for (auto [key, volume_data] : draw_properties->data->asKeyValueRange()) {
         size_t atlas_x = count % volumes_per_atlas_dim;
         size_t atlas_y = (count % volumes_per_atlas_slice) / volumes_per_atlas_dim;
         size_t atlas_z = count / volumes_per_atlas_slice;
@@ -163,6 +170,9 @@ AtlasContainer createVolumeAtlasContainer(TreeDrawProperties *draw_properties, s
 
     // Not needed anymore
     delete draw_properties->data;
+    draw_properties->data = nullptr;
+
+    qDebug() << "Creating volume atlas container took" << timer.elapsed() << "milliseconds";
 
     return container;
 }

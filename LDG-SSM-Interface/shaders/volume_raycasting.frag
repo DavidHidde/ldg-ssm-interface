@@ -1,6 +1,6 @@
 #version 410
 
-layout(pixel_center_integer) in vec4 gl_FragCoord;
+layout(pixel_center_integer, origin_upper_left) in vec4 gl_FragCoord;
 
 uniform vec3 color_0;
 uniform vec3 color_1;

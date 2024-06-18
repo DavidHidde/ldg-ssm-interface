@@ -11,10 +11,8 @@
 /**
  * @brief The Renderer class Interface for render classes.
  */
-class Renderer : public QObject
+class Renderer
 {
-    Q_OBJECT
-
 public:
     Renderer(TreeDrawProperties *tree_properties, WindowDrawProperties *window_properties);
     virtual ~Renderer();

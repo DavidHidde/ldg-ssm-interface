@@ -57,3 +57,4 @@ compile_commands.json
 .DS_STORE
 
 **/tmp/
+*build

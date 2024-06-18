@@ -10,6 +10,9 @@
     <height>900</height>
    </rect>
   </property>
+  <property name="mouseTracking">
+   <bool>false</bool>
+  </property>
   <property name="windowTitle">
    <string>LDGSSMInterface</string>
   </property>
@@ -171,6 +174,9 @@
           <widget class="QDoubleSpinBox" name="disparitySpinBox">
            <property name="alignment">
             <set>Qt::AlignCenter</set>
+           </property>
+           <property name="decimals">
+            <number>2</number>
            </property>
            <property name="maximum">
             <double>1.000000000000000</double>
@@ -364,6 +370,9 @@
     </item>
     <item>
      <widget class="PannableScrollArea" name="scrollArea">
+      <property name="mouseTracking">
+       <bool>false</bool>
+      </property>
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>

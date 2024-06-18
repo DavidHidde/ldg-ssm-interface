@@ -16,8 +16,10 @@ struct WindowDrawProperties
     // Dynamic window specific properties
     double scale;
     float device_pixel_ratio;
-    QVector2D window_size;              // Total window size in width x height
-    QRect current_viewport;             // The currently visible viewport
+
+    QVector2D draw_origin;              // Start pixel coordinates for drawing.
+    QVector2D base_window_size;         // The size of the window at a scaling of 1.
+    QVector2D scaled_window_size;       // Base window size scaled by scale.
 };
 
 #endif // WINDOW_DRAW_PROPERTIES_H
